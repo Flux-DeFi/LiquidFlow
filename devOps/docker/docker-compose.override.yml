@@ -1,0 +1,16 @@
+services:
+  postgres:
+    ports:
+      - "5432:5432"  # expuesto para conectarte con TablePlus, etc.
+
+  backend:
+    build:
+      target: builder  # usa la stage con devDependencies
+    environment:
+      NODE_ENV: development
+      PORT: 3001
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./backend/src:/app/src  # hot reload
+    command: npm run dev
