@@ -17,7 +17,9 @@ Please read this document carefully before opening a Pull Request.
 * [Local Development Setup](#local-development-setup)
 * [Branching Strategy](#branching-strategy)
 * [Commit Guidelines & Hooks](#commit-guidelines--hooks)
+* [Bug Reporting Guidelines](#bug-reporting-guidelines)
 * [Pull Request Process](#pull-request-process)
+* [External Developer Guidelines](#external-developer-guidelines)
 * [Code of Conduct](#code-of-conduct)
 
 ---
@@ -208,6 +210,39 @@ docs: update setup instructions
 
 ---
 
+#  Bug Reporting Guidelines
+
+##  How to Report a Bug
+
+Before creating a bug report, please check existing issues to avoid duplicates.
+
+###  Bug Report Template
+
+When filing a bug report, please include:
+
+* **Title**: Clear and descriptive summary of the issue
+* **Description**: Detailed explanation of the problem
+* **Steps to Reproduce**: Step-by-step instructions to reproduce the issue
+* **Expected Behavior**: What you expected to happen
+* **Actual Behavior**: What actually happened
+* **Environment**:
+  * OS and version
+  * Browser version (if applicable)
+  * Node.js version (if applicable)
+  * Any other relevant environment details
+* **Screenshots**: If applicable, add screenshots to help explain your problem
+* **Additional Context**: Any other context about the problem
+
+###  Bug Report Labels
+
+Maintainers will label bug reports with:
+* `bug`: Confirmed bug
+* `needs-reproduction`: Needs more information to reproduce
+* `wont-fix`: Not a bug or out of scope
+* `duplicate`: Duplicate of an existing issue
+
+---
+
 #  Pull Request Process
 
 ##  Sync with Main
@@ -266,6 +301,62 @@ Maintainers may:
 * Suggest improvements
 
 Please respond respectfully and update your branch as requested.
+
+---
+
+#  External Developer Guidelines
+
+##  For External Contributors
+
+We welcome contributions from external developers! This section provides specific guidelines for those outside the core team.
+
+###  Getting Started
+
+1. Fork the repository
+2. Create a feature branch from `main`
+3. Make your changes following our coding standards
+4. Test your changes thoroughly
+5. Submit a pull request with a clear description
+
+###  What We Accept
+
+We welcome contributions in the following areas:
+
+* **Bug fixes**: Fixes for issues reported in the bug tracker
+* **Documentation**: Improvements to documentation, README, and guides
+* **Features**: New features that align with our roadmap
+* **Performance**: Optimizations and performance improvements
+* **Tests**: Additional test coverage for existing functionality
+
+###  What We Don't Accept
+
+* Major architectural changes without prior discussion
+* Changes that break existing APIs without migration path
+* Features outside our project scope
+* PRs with failing tests or lint errors
+
+###  Communication
+
+* For questions: Use GitHub Discussions
+* For bug reports: Create an issue using the bug template
+* For feature requests: Create an issue with the "enhancement" label
+* For security issues: See our security policy
+
+###  Review Process
+
+All external contributions go through our review process:
+
+1. Automated checks (lint, tests)
+2. Code review by maintainers
+3. Possible request for changes
+4. Approval and merge by maintainers
+
+###  Recognition
+
+Contributors who make significant contributions will be recognized in:
+* Our contributors list
+* Release notes (for significant features)
+* Project documentation
 
 ---
 

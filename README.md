@@ -87,6 +87,19 @@ cargo build --target wasm32-unknown-unknown --release
 
 Contributions are welcome! Please fork the repository and submit a pull request.
 
+For detailed guidelines on contributing, including:
+- Bug reporting procedures
+- Pull request submission process
+- External developer guidelines
+
+Please see our [Contributing Guide](./CONTRIBUTING.md).
+
+### Quick Links for External Contributors
+
+- [Bug Report Template](./.github/ISSUE_TEMPLATE/bug_report.md)
+- [Feature Request Template](./.github/ISSUE_TEMPLATE/feature_request.md)
+- [Pull Request Template](./.github/pull_request_template.md)
+
 ## Contributors
 
 <!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
