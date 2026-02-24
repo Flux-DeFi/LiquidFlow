@@ -12,5 +12,5 @@ services:
     ports:
       - "3001:3001"
     volumes:
-      - ./backend/src:/app/src  # hot reload
+      - ../../src:/app/src  # hot reload
     command: npm run dev

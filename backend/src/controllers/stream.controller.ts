@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { type Request, type Response } from 'express';
 import { createStreamSchema } from '../validators/stream.validator.js';
 
 export const createStream = async (req: Request, res: Response) => {

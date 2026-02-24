@@ -2,10 +2,11 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-COPY package*.json ./
+COPY package.json package-lock.json ./
 RUN npm ci
 
 COPY tsconfig.json ./
+COPY prisma.config.ts ./
 COPY src ./src
 COPY prisma ./prisma
 
@@ -18,7 +19,7 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-COPY package*.json ./
+COPY package.json package-lock.json ./
 RUN npm ci --only=production && npm install @prisma/client
 
 COPY --from=builder /app/dist ./dist

@@ -25,11 +25,11 @@ This guide explains how to run the full LiquidFlow stack (PostgreSQL + Backend) 
 
 ## First-time Setup
 
-### 1. Copy the env file
+### 1. Cd to devOps directory
 
 ```bash
 # From repo root
-cp devOps/.env.example devOps/.env.local
+cd /backend
 ```
 
 The default values in `.env.local` work out of the box — no changes needed for local development.
@@ -37,11 +37,8 @@ The default values in `.env.local` work out of the box — no changes needed for
 ### 2. Start the stack
 
 ```bash
-cd devOps
-docker compose -f docker/docker-compose.yml \
-               -f docker/docker-compose.override.yml \
-               --env-file .env.local \
-               up --build
+Set-Location D:\Archivos\grantfox\LiquidFlow\backend\devOps
+docker compose -f docker/docker-compose.yml -f docker/docker-compose.override.yml --env-file ../.env.local up --build
 ```
 
 Docker Compose will:
