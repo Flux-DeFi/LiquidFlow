@@ -63,6 +63,29 @@ docker exec -it <container> npx prisma migrate reset
 docker exec -it <container> npx prisma migrate dev --name init_postgres
 ```
 
+If the migration process fails or the database/migration state is inconsistent, you can follow these recovery steps:
+
+1. Delete the `prisma/migrations` folder inside the backend container (replace the container id if different):
+
+```bash
+docker exec -it <container> rm -rf prisma/migrations
+docker exec -it <container> prisma migrate reset
+```
+
+2. Delete the local `prisma/migrations` folder on your machine (PowerShell):
+
+```powershell
+Remove-Item -Recurse -Force .\prisma\migrations
+```
+
+3. Retry creating and applying the migration from the container:
+
+```bash
+docker exec -it <container> npx prisma migrate dev --name init_postgres
+```
+
+Note: these steps remove migration history and should only be used for local development. For shared or production databases, prefer inspecting drift with `prisma migrate status` and restoring from backups instead of deleting migrations.
+
 Observed outputs and actions:
 
 - Prisma reported a schema drift: the database schema had tables and indexes that did not match the local migration history.
