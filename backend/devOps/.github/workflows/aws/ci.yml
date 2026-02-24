@@ -15,7 +15,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # ── Check the flag ──────────────────────
+  # Check the flag
   check-flag:
     name: Check ENABLE_CI flag
     runs-on: ubuntu-latest
@@ -25,7 +25,7 @@ jobs:
       - id: flag
         run: echo "enabled=${{ vars.ENABLE_CI }}" >> "$GITHUB_OUTPUT"
 
-  # ── Backend: tests + build ──────────────────
+  # Backend: tests + build
   backend:
     name: Backend – test & build
     needs: check-flag
@@ -78,9 +78,9 @@ jobs:
       - name: TypeScript build check
         run: npm run build
 
-  # ── Frontend: lint + build ──────────────────
+  # Frontend: lint + build
   frontend:
-    name: Frontend – lint & build
+    name: Frontend - lint & build
     needs: check-flag
     if: needs.check-flag.outputs.enabled == 'true'
     runs-on: ubuntu-latest

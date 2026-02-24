@@ -13,28 +13,32 @@ echo " LiquidFlow Bootstrap — ${environment}"
 echo " $(date -u)"
 echo "======================================================="
 
-# ─── System Update ────────────────────────────────────────────────────────────
+# System Update
 dnf update -y
 dnf install -y git curl unzip jq
 
-# ─── Node.js 20 (LTS) ─────────────────────────────────────────────────────────
+# Node.js 20 (LTS)
 curl -fsSL https://rpm.nodesource.com/setup_20.x | bash -
 dnf install -y nodejs
 node --version
 npm --version
 
-# ─── PM2 Process Manager ──────────────────────────────────────────────────────
+# Application User (created early so pm2 startup can reference it)
+useradd -m -s /bin/bash appuser || true
+mkdir -p /home/appuser/app/logs
+
+# PM2 Process Manager
 npm install -g pm2
 pm2 startup systemd -u appuser --hp /home/appuser
 
-# ─── AWS CLI v2 ───────────────────────────────────────────────────────────────
+# AWS CLI v2
 curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "/tmp/awscliv2.zip"
 unzip -q /tmp/awscliv2.zip -d /tmp
 /tmp/aws/install --update
 rm -rf /tmp/awscliv2.zip /tmp/aws/
 aws --version
 
-# ─── CloudWatch Agent ─────────────────────────────────────────────────────────
+# CloudWatch Agent
 dnf install -y amazon-cloudwatch-agent
 
 cat > /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json << 'CWCONFIG'
@@ -82,11 +86,7 @@ CWCONFIG
   -a fetch-config -m ec2 \
   -c file:/opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json -s
 
-# ─── Application User ─────────────────────────────────────────────────────────
-useradd -m -s /bin/bash appuser || true
-mkdir -p /home/appuser/app/logs
-
-# ─── Fetch DB Credentials from Secrets Manager ───────────────────────────────
+# Fetch DB Credentials from Secrets Manager
 echo "Fetching DB credentials from Secrets Manager..."
 DB_SECRET=$(aws secretsmanager get-secret-value \
   --secret-id "${db_secret_arn}" \
@@ -97,7 +97,7 @@ DB_SECRET=$(aws secretsmanager get-secret-value \
 DB_PASSWORD=$(echo "$DB_SECRET" | jq -r '.password')
 DB_USERNAME=$(echo "$DB_SECRET" | jq -r '.username')
 
-# ─── Application Environment File ─────────────────────────────────────────────
+# Application Environment File
 cat > /home/appuser/app/.env << ENV
 NODE_ENV=${environment}
 PORT=${app_port}

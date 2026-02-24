@@ -48,13 +48,58 @@ Docker Compose will:
 
 ### 3. Run Prisma migrations
 
-On the first run (or after adding new migrations) apply them:
+Summary of what was run and observed when applying Prisma migrations inside the backend container.
+
+Commands executed (inside running backend container):
 
 ```bash
-docker compose -f docker/docker-compose.yml \
-               --env-file .env.local \
-               exec backend npx prisma migrate dev
+# attempt to apply a migration
+docker exec -it <container> npx prisma migrate dev --name init_postgres
+
+# reset the development database (drops all data)
+docker exec -it <container> npx prisma migrate reset
+
+# re-create and apply migration from current schema
+docker exec -it <container> npx prisma migrate dev --name init_postgres
 ```
+
+Observed outputs and actions:
+
+- Prisma reported a schema drift: the database schema had tables and indexes that did not match the local migration history.
+- Detected additions: tables `Stream` and `StreamEvent`.
+- Detected schema changes on `Stream` and `User` (indexes, unique constraints, and foreign keys).
+- Noted a migration present in the database but missing locally: `20260224062743_first_migration`.
+- Performed `prisma migrate reset` to clear the development database (all data lost) and remove drift.
+- After reset, running `prisma migrate dev --name init_postgres` created and applied a new migration:
+
+	- `prisma/migrations/20260224063217_init_postgres/migration.sql`
+
+- Final state: "Your database is now in sync with your schema."
+
+Notes / recommendations:
+
+- The missing migration `20260224062743_first_migration` indicates a migration was applied to the database earlier but its folder is not present in the local `prisma/migrations` directory. To avoid this, keep migration folders checked into source control.
+- Use `prisma migrate status` to inspect migration vs DB state before running destructive commands.
+- For CI / production apply-only flows, prefer `npx prisma migrate deploy` (non-interactive) instead of `migrate dev`.
+
+Reproducible commands (from repo root):
+
+```powershell
+# via Docker Compose (recommended for local dev when using compose)
+cd backend/devOps
+docker compose -f docker/docker-compose.yml --env-file ../.env.local \
+	exec backend npx prisma migrate dev --name <migration-name>
+
+# locally (without Docker) make sure DATABASE_URL is set and run from backend
+Set-Location backend
+#$env:DATABASE_URL = 'postgresql://postgres:postgres@localhost:5432/liquidflow_dev?schema=public'
+npx prisma migrate dev --name <migration-name> --schema ./prisma/schema.prisma
+```
+
+Notes:
+- `migrate dev` creates migration files under `prisma/migrations`, applies them to the database, and updates the Prisma client for development.
+- Use `migrate deploy` in CI/production to apply already-created migrations without prompts.
+- When running via Docker Compose, ensure the `backend` service can reach the Postgres container (the compose setup already waits for Postgres healthcheck).
 
 ---
 

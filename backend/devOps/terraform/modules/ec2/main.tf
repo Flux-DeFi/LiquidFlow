@@ -14,7 +14,7 @@ locals {
 data "aws_caller_identity" "current" {}
 data "aws_elb_service_account" "main" {}
 
-# ─── LAUNCH TEMPLATE ─────────────────────────────────────────────────────────
+# LAUNCH TEMPLATE
 resource "aws_launch_template" "app" {
   name_prefix   = "${local.name_prefix}-lt-"
   image_id      = var.ami_id
@@ -75,7 +75,7 @@ resource "aws_launch_template" "app" {
   })
 }
 
-# ─── S3 BUCKET FOR ALB ACCESS LOGS ───────────────────────────────────────────
+# S3 BUCKET FOR ALB ACCESS LOGS
 resource "aws_s3_bucket" "alb_logs" {
   bucket        = "${local.name_prefix}-alb-logs-${data.aws_caller_identity.current.account_id}"
   force_destroy = var.environment != "prod"
@@ -98,6 +98,18 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "alb_logs" {
   rule {
     apply_server_side_encryption_by_default {
       sse_algorithm = "AES256"
+    }
+  }
+}
+
+resource "aws_s3_bucket_lifecycle_configuration" "alb_logs" {
+  bucket = aws_s3_bucket.alb_logs.id
+
+  rule {
+    id     = "expire-alb-logs"
+    status = "Enabled"
+    expiration {
+      days = var.environment == "prod" ? 90 : 30
     }
   }
 }
@@ -144,7 +156,7 @@ data "aws_iam_policy_document" "alb_logs_bucket_policy" {
   }
 }
 
-# ─── APPLICATION LOAD BALANCER ────────────────────────────────────────────────
+# APPLICATION LOAD BALANCER
 resource "aws_lb" "app" {
   name               = "${local.name_prefix}-alb"
   internal           = false
@@ -168,7 +180,7 @@ resource "aws_lb" "app" {
   depends_on = [aws_s3_bucket_policy.alb_logs]
 }
 
-# ─── TARGET GROUP ─────────────────────────────────────────────────────────────
+# TARGET GROUP
 resource "aws_lb_target_group" "app" {
   name     = "${local.name_prefix}-tg"
   port     = var.app_port
@@ -197,7 +209,7 @@ resource "aws_lb_target_group" "app" {
   }
 }
 
-# ─── ALB LISTENER: HTTP (redirect to HTTPS or forward) ───────────────────────
+# ALB LISTENER: HTTP (redirect to HTTPS or forward)
 resource "aws_lb_listener" "http" {
   load_balancer_arn = aws_lb.app.arn
   port              = 80
@@ -228,7 +240,7 @@ resource "aws_lb_listener" "http" {
   tags = local.common_tags
 }
 
-# ─── ALB LISTENER: HTTPS (optional) ──────────────────────────────────────────
+# ALB LISTENER: HTTPS (optional)
 resource "aws_lb_listener" "https" {
   count             = var.certificate_arn != null ? 1 : 0
   load_balancer_arn = aws_lb.app.arn
@@ -245,7 +257,7 @@ resource "aws_lb_listener" "https" {
   tags = local.common_tags
 }
 
-# ─── AUTO SCALING GROUP ───────────────────────────────────────────────────────
+# AUTO SCALING GROUP
 resource "aws_autoscaling_group" "app" {
   name                      = "${local.name_prefix}-asg"
   min_size                  = var.min_size
@@ -258,7 +270,7 @@ resource "aws_autoscaling_group" "app" {
 
   launch_template {
     id      = aws_launch_template.app.id
-    version = "$Latest"
+    version = "$Default"  # Use $Default so new template versions are gated before rollout
   }
 
   instance_refresh {
@@ -285,7 +297,7 @@ resource "aws_autoscaling_group" "app" {
   }
 }
 
-# ─── CLOUDWATCH: SCALE-OUT ────────────────────────────────────────────────────
+# CLOUDWATCH: SCALE-OUT
 resource "aws_autoscaling_policy" "scale_out" {
   name                   = "${local.name_prefix}-scale-out"
   autoscaling_group_name = aws_autoscaling_group.app.name
@@ -313,7 +325,7 @@ resource "aws_cloudwatch_metric_alarm" "cpu_high" {
   tags = local.common_tags
 }
 
-# ─── CLOUDWATCH: SCALE-IN ─────────────────────────────────────────────────────
+# CLOUDWATCH: SCALE-IN
 resource "aws_autoscaling_policy" "scale_in" {
   name                   = "${local.name_prefix}-scale-in"
   autoscaling_group_name = aws_autoscaling_group.app.name

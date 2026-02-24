@@ -11,7 +11,7 @@ locals {
   )
 }
 
-# ─── EC2 INSTANCE ROLE ────────────────────────────────────────────────────────
+# EC2 INSTANCE ROLE
 resource "aws_iam_role" "ec2" {
   name        = "${local.name_prefix}-ec2-role"
   description = "Role for ${local.name_prefix} EC2 instances — least privilege"
@@ -42,7 +42,7 @@ resource "aws_iam_role_policy_attachment" "cloudwatch_agent" {
   policy_arn = "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"
 }
 
-# ─── S3 ACCESS (scoped to project buckets only) ───────────────────────────────
+# S3 ACCESS (scoped to project buckets only)
 resource "aws_iam_policy" "s3_access" {
   count       = length(var.s3_bucket_arns) > 0 ? 1 : 0
   name        = "${local.name_prefix}-ec2-s3-access"

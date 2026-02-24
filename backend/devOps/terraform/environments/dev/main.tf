@@ -19,7 +19,7 @@ module "vpc" {
   public_subnet_cidrs  = var.public_subnet_cidrs
   private_subnet_cidrs = var.private_subnet_cidrs
   availability_zones   = var.availability_zones
-  enable_nat_gateway   = false # NAT Gateway not needed in dev to reduce costs
+  enable_nat_gateway   = true  # Required: EC2 user-data needs internet access (NodeSource, AWS CLI, dnf)
   enable_vpc_flow_logs = false  # Disabled in dev to reduce costs
   tags                 = var.tags
 }
@@ -72,7 +72,7 @@ module "rds" {
   performance_insights_enabled  = false   # Disabled in dev
   apply_immediately             = true
   tags                          = var.tags
-  storage_encrypted             = true # Always encrypt storage, even in dev
+  # Note: storage_encrypted is hardcoded to true inside the module — always encrypted
 }
 
 # IAM (EC2 instance role + scoped policies)

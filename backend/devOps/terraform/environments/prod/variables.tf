@@ -73,7 +73,11 @@ variable "db_instance_class" {
 variable "certificate_arn" {
   description = "ACM certificate ARN for HTTPS (required in prod)"
   type        = string
-  # In prod, this should always be set
+
+  validation {
+    condition     = can(regex("^arn:aws:acm:", var.certificate_arn))
+    error_message = "certificate_arn must be a valid ACM ARN (arn:aws:acm:...). HTTPS is required in production."
+  }
 }
 
 variable "tags" {
