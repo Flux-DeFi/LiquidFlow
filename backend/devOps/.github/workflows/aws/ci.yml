@@ -1,0 +1,108 @@
+# Continuous Integration
+# Enabled/disabled with the repository variable:
+#   Settings → Secrets and variables → Variables → ENABLE_CI = true | false
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: [main, develop]
+
+# Cancel previous executions in the same branch to save minutes
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Check the flag
+  check-flag:
+    name: Check ENABLE_CI flag
+    runs-on: ubuntu-latest
+    outputs:
+      enabled: ${{ steps.flag.outputs.enabled }}
+    steps:
+      - id: flag
+        run: echo "enabled=${{ vars.ENABLE_CI }}" >> "$GITHUB_OUTPUT"
+
+  # Backend: tests + build
+  backend:
+    name: Backend – test & build
+    needs: check-flag
+    if: needs.check-flag.outputs.enabled == 'true'
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: liquidflow_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U test -d liquidflow_test"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=5
+
+    env:
+      DATABASE_URL: postgresql://test:test@localhost:5432/liquidflow_test
+
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+      - name: Run migrations (test DB)
+        run: npx prisma migrate deploy
+
+      - name: Run tests
+        run: npm test
+
+      - name: TypeScript build check
+        run: npm run build
+
+  # Frontend: lint + build
+  frontend:
+    name: Frontend - lint & build
+    needs: check-flag
+    if: needs.check-flag.outputs.enabled == 'true'
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build (Next.js)
+        run: npm run build

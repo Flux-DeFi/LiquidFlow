@@ -1,0 +1,133 @@
+# Continuous Deployment  →  EC2 via SSH
+# Enabled/disabled with the repository variable:
+#   Settings → Secrets and variables → Variables → ENABLE_CD = true | false
+#
+# Required secrets (Settings → Secrets → Actions):
+#   EC2_HOST          → IP pública o hostname del servidor
+#   EC2_USER          → usuario SSH (ej. ec2-user, ubuntu)
+#   EC2_SSH_KEY       → clave privada PEM del par de claves EC2
+#   DOCKER_HUB_USER   → usuario Docker Hub (o GHCR username)
+#   DOCKER_HUB_TOKEN  → access token Docker Hub
+#   APP_ENV_FILE      → contenido completo del .env de producción
+name: CD - Deploy to EC2
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: cd-production
+  cancel-in-progress: false   # nunca cancelar un deploy en curso
+
+jobs:
+  # Check the flag
+  check-flag:
+    name: Check ENABLE_CD flag
+    runs-on: ubuntu-latest
+    outputs:
+      enabled: ${{ steps.flag.outputs.enabled }}
+    steps:
+      - id: flag
+        run: echo "enabled=${{ vars.ENABLE_CD }}" >> "$GITHUB_OUTPUT"
+
+  # Build & push Docker image
+  build:
+    name: Build & push Docker image
+    needs: check-flag
+    if: needs.check-flag.outputs.enabled == 'true'
+    runs-on: ubuntu-latest
+
+    outputs:
+      image_tag: ${{ steps.meta.outputs.version }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_HUB_USER }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+
+      - name: Extract image metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ secrets.DOCKER_HUB_USER }}/liquidflow-backend
+          tags: |
+            type=sha,prefix=,format=short
+            type=raw,value=latest
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build & push
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # Deploy to EC2 server
+  deploy:
+    name: Deploy to EC2
+    needs: [check-flag, build]
+    if: needs.check-flag.outputs.enabled == 'true'
+    runs-on: ubuntu-latest
+
+    environment:
+      name: production
+      url: http://${{ secrets.EC2_HOST }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            set -e
+
+            # ── Update code ──────────────
+            cd ~/liquidflow
+            git pull origin main
+
+            # ── Write production .env ───
+            echo "${{ secrets.APP_ENV_FILE }}" > .env
+
+            # ── Pull new image ────────
+            docker pull ${{ secrets.DOCKER_HUB_USER }}/liquidflow-backend:${{ needs.build.outputs.image_tag }}
+
+            # ── Restart services ────────────
+            docker compose \
+              -f devOps/docker/docker-compose.yml \
+              -f devOps/docker/docker-compose.prod.yml \
+              --env-file .env \
+              up -d --remove-orphans
+
+            # ── Prisma migrations ─────────────
+            docker compose \
+              -f devOps/docker/docker-compose.yml \
+              --env-file .env \
+              exec -T backend npx prisma migrate deploy
+
+            # ── Clean up old images ────
+            docker image prune -f
+
+      - name: Notify deployment success
+        if: success()
+        run: |
+          echo "✅ Deploy to production completed – image tag: ${{ needs.build.outputs.image_tag }}"
+
+      - name: Notify deployment failure
+        if: failure()
+        run: |
+          echo "❌ Deploy failed – check the logs above"
+          exit 1
