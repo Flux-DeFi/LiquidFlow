@@ -1,3 +1,5 @@
+"use client"
+
 import React, { useState } from 'react';
 import { Button } from './ui/Button';
 import { ModeToggle } from './ModeToggle';
@@ -38,7 +40,7 @@ export const Navbar = () => {
             </div>
 
             {/* Mobile Menu Button */}
-            <button 
+            <button
                 className="md:hidden flex items-center justify-center w-10 h-10 rounded-lg text-white hover:bg-white/10 transition-colors"
                 onClick={toggleMobileMenu}
                 aria-label="Toggle menu"
