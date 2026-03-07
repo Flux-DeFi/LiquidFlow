@@ -8,8 +8,7 @@ export default function SettingsPage() {
   const [theme, setTheme] = useState<"light" | "dark">("dark");
   const [copied, setCopied] = useState(false);
 
-  const connectedAddress =
-    "0x92f4D9b123456789ABCDEF123456789ABCDEF123";
+  const connectedAddress = "0x92f4D9b123456789ABCDEF123456789ABCDEF123";
 
   /* ---------------- THEME INIT ---------------- */
   useEffect(() => {
@@ -20,10 +19,7 @@ export default function SettingsPage() {
 
     if (saved) {
       setTheme(saved);
-      document.documentElement.classList.toggle(
-        "dark",
-        saved === "dark"
-      );
+      document.documentElement.classList.toggle("dark", saved === "dark");
     }
   }, []);
 
@@ -31,10 +27,7 @@ export default function SettingsPage() {
     const next = theme === "dark" ? "light" : "dark";
     setTheme(next);
     localStorage.setItem("flowfi-theme", next);
-    document.documentElement.classList.toggle(
-      "dark",
-      next === "dark"
-    );
+    document.documentElement.classList.toggle("dark", next === "dark");
   };
 
   const copyAddress = async () => {
@@ -49,14 +42,12 @@ export default function SettingsPage() {
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-zinc-950 via-zinc-900 to-black dark:from-white dark:via-gray-100 dark:to-gray-200 transition-colors">
-
       {/* Background Glow */}
       <div className="absolute -top-40 -right-40 w-96 h-96 bg-purple-600/20 blur-3xl rounded-full" />
       <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-blue-600/20 blur-3xl rounded-full" />
 
-      <div className="relative max-w-xl mx-auto px-6 py-20">
-        <div className="rounded-3xl border border-white/10 dark:border-black/10 bg-white/5 dark:bg-black/5 backdrop-blur-2xl shadow-2xl p-10 space-y-10">
-
+      <div className="relative max-w-xl mx-auto px-4 sm:px-6 py-12 sm:py-20">
+        <div className="rounded-3xl border border-white/10 dark:border-black/10 bg-white/5 dark:bg-black/5 backdrop-blur-2xl shadow-2xl p-6 sm:p-10 space-y-8 sm:space-y-10">
           <div>
             <h1 className="text-3xl font-semibold tracking-tight text-white dark:text-black">
               Profile Settings
@@ -83,9 +74,7 @@ export default function SettingsPage() {
             </div>
 
             <button
-              onClick={() =>
-                setEmailNotifications(!emailNotifications)
-              }
+              onClick={() => setEmailNotifications(!emailNotifications)}
               className={`relative w-14 h-7 rounded-full transition-all duration-300 ${
                 emailNotifications
                   ? "bg-gradient-to-r from-purple-500 to-blue-500"
@@ -94,9 +83,7 @@ export default function SettingsPage() {
             >
               <span
                 className={`absolute top-1 left-1 w-5 h-5 bg-white rounded-full shadow-md transform transition duration-300 ${
-                  emailNotifications
-                    ? "translate-x-7"
-                    : "translate-x-0"
+                  emailNotifications ? "translate-x-7" : "translate-x-0"
                 }`}
               />
             </button>
@@ -112,9 +99,7 @@ export default function SettingsPage() {
                 <p className="font-medium text-white dark:text-black">
                   Appearance
                 </p>
-                <p className="text-sm opacity-60">
-                  Toggle dark & light mode
-                </p>
+                <p className="text-sm opacity-60">Toggle dark & light mode</p>
               </div>
             </div>
 
@@ -132,18 +117,17 @@ export default function SettingsPage() {
               Connected Wallet
             </p>
 
-            <div className="relative flex items-center justify-between bg-black/40 dark:bg-white/40 px-5 py-4 rounded-xl font-mono text-sm break-all text-white dark:text-black border border-white/10 dark:border-black/10">
-
-              <span className="pr-4">{connectedAddress}</span>
+            <div className="relative flex items-center justify-between bg-black/40 dark:bg-white/40 px-4 py-3 sm:px-5 sm:py-4 rounded-xl font-mono text-xs sm:text-sm break-all text-white dark:text-black border border-white/10 dark:border-black/10">
+              <span className="pr-4 truncate">{connectedAddress}</span>
 
               <button
                 onClick={copyAddress}
-                className="ml-3 opacity-70 hover:opacity-100 transition"
+                className="ml-3 opacity-70 hover:opacity-100 transition flex-shrink-0"
               >
                 {copied ? (
-                  <Check size={18} className="text-green-400" />
+                  <Check size={16} className="text-green-400 sm:size-18" />
                 ) : (
-                  <Copy size={18} />
+                  <Copy size={16} className="sm:size-18" />
                 )}
               </button>
 
@@ -163,7 +147,6 @@ export default function SettingsPage() {
             <LogOut size={18} />
             Disconnect Wallet
           </button>
-
         </div>
       </div>
     </div>

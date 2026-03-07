@@ -28,6 +28,16 @@ app.get('/api-docs.json', (req: Request, res: Response) => {
 // Routes
 app.use('/streams', streamRoutes);
 
+// Health check endpoints
+app.use((req: Request, res: Response, next) => {
+    return {
+        status: 'healthy',
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+        version: '1.0.0',
+    }
+});
+
 /**
  * @openapi
  * /:
