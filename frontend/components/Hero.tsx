@@ -17,12 +17,12 @@ export const Hero = () => {
                 </div>
 
                 <h1 className="mt-10 animate-slide-up text-5xl font-black tracking-tight md:text-7xl lg:text-8xl leading-[1.05]">
-                    Real-time <br />
-                    <span className="text-gradient">Payment Streams</span>
+                    Programmable <br />
+                    <span className="text-gradient">Money Streams</span>
                 </h1>
 
                 <p className="mt-8 max-w-2xl animate-slide-up text-lg font-medium text-slate-400 md:text-xl lg:text-2xl leading-relaxed [animation-delay:0.1s]">
-                    The trustless infrastructure to stream salaries, rewards, and multi-sig distributions in real-time. Reduce friction, eliminate gas waste, and unlock capital efficiency.
+                    The first programmable payment infrastructure built for Stellar. Stream salaries, manage token vesting, and automate treasury distributions in real-time. Unlocking capital efficiency with every second.
                 </p>
 
                 <div className="mt-12 flex animate-slide-up flex-col gap-5 sm:flex-row [animation-delay:0.2s] w-full justify-center lg:justify-start">
