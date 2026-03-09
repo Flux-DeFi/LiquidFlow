@@ -18,5 +18,10 @@ export default defineConfig({
         '**/*.spec.*'
       ]
     }
+  },
+  resolve: {
+    alias: {
+      '@': './src'
+    }
   }
 });
