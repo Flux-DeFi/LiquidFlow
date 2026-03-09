@@ -10,12 +10,12 @@ import {
 } from "react";
 import {
   SUPPORTED_WALLETS,
-  connectWallet,
   toWalletErrorMessage,
   type WalletDescriptor,
   type WalletId,
   type WalletSession,
 } from "@/lib/wallet";
+import { useSorobanReact } from "@soroban-react/core";
 
 type WalletStatus = "idle" | "connecting" | "connected" | "error";
 
@@ -176,11 +176,33 @@ function removeStoredSession(): void {
 
 export function WalletProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(walletReducer, INITIAL_STATE);
+  const sorobanContext = useSorobanReact();
+  const { address, connect: sorobanConnect, disconnect: sorobanDisconnect, activeChain, activeConnector } = sorobanContext;
 
   useEffect(() => {
     const existingSession = readStoredSession();
     dispatch({ type: "hydrate", session: existingSession });
   }, []);
+
+  // Sync soroban-react state with local wallet state
+  useEffect(() => {
+    if (address && activeConnector) {
+      const session: WalletSession = {
+        walletId: "freighter", // Defaulting to freighter for now as it's the primary integration
+        walletName: activeConnector.name || "Freighter",
+        publicKey: address,
+        connectedAt: new Date().toISOString(),
+        network: activeChain?.name || "Stellar Testnet",
+        mocked: false,
+      };
+      dispatch({ type: "connect:success", session });
+      storeSession(session);
+    } else if (state.isHydrated && state.status === "connected" && !address) {
+      // If we were connected but now address is gone, disconnect
+      dispatch({ type: "disconnect" });
+      removeStoredSession();
+    }
+  }, [address, activeConnector, activeChain, state.isHydrated]);
 
   const clearError = useCallback(() => {
     dispatch({ type: "error:clear" });
@@ -190,9 +212,12 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     dispatch({ type: "connect:start", walletId });
 
     try {
-      const nextSession = await connectWallet(walletId);
-      dispatch({ type: "connect:success", session: nextSession });
-      storeSession(nextSession);
+      if (walletId === "freighter") {
+        await sorobanConnect();
+      } else {
+        // Fallback or other wallets (can be implemented later or kept as mock)
+        throw new Error(`Wallet ${walletId} not yet implemented via Soroban React Core.`);
+      }
     } catch (error) {
       dispatch({
         type: "connect:error",
@@ -200,12 +225,13 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
       });
       removeStoredSession();
     }
-  }, []);
+  }, [sorobanConnect]);
 
   const disconnect = useCallback(() => {
+    sorobanDisconnect();
     dispatch({ type: "disconnect" });
     removeStoredSession();
-  }, []);
+  }, [sorobanDisconnect]);
 
   const value = useMemo<WalletContextValue>(
     () => ({
