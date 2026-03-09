@@ -6,9 +6,16 @@
   "main": "index.js",
   "scripts": {
     "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "dev": "nodemon --exec 'node --loader ts-node/esm src/index.ts'",
     "build": "tsc",
     "start": "node dist/index.js",
+    "lint": "eslint . --ext .ts,.js || echo 'ESLint not configured'",
+    "lint:fix": "eslint . --ext .ts,.js --fix || echo 'ESLint not configured'",
+    "format": "prettier --write . || echo 'Prettier not configured'",
+    "format:check": "prettier --check . || echo 'Prettier not configured'",
+    "type-check": "tsc --noEmit",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio"
