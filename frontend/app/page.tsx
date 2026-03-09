@@ -7,6 +7,8 @@ import { Hero } from "@/components/Hero";
 import { HowItWorks } from "@/components/HowItWorks";
 import { Navbar } from "@/components/Navbar";
 import { Stats } from "@/components/Stats";
+import { ProgrammableLogic } from "@/components/ProgrammableLogic";
+import { UseCases } from "@/components/UseCases";
 
 export default function Home() {
   return (
@@ -23,7 +25,9 @@ export default function Home() {
         <Hero />
         <Stats />
         <Features />
+        <ProgrammableLogic />
         <HowItWorks />
+        <UseCases />
 
         <section className="relative overflow-hidden px-6 py-40 text-center">
           <div className="absolute inset-0 bg-accent/5 opacity-50"></div>
