@@ -173,9 +173,15 @@ jobs:
     
     - name: Run Snyk security scan (if available)
       working-directory: ./backend
-      run: npx snyk test || true  # Allow to fail if snyk not configured
+      run: |
+        if [ -n "$SNYK_TOKEN" ]; then
+          npx snyk test
+        else
+          echo "Snyk token not configured, skipping security scan"
+        fi
       env:
         SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      continue-on-error: true
 
   docker:
     name: Docker Build Test
