@@ -321,7 +321,7 @@ export function ConnectWalletModal({
             <div className="px-6 pb-5 pt-1">
               {!isConnected ? (
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>Don't have a wallet?</span>
+                  <span>Don&apos;t have a wallet?</span>
                   <a
                     href={WALLET_INSTALL_URLS[selectedWalletId ?? "freighter"]}
                     target="_blank"

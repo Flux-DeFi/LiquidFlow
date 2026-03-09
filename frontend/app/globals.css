@@ -649,6 +649,36 @@ body {
   gap: 0.35rem;
 }
 
+.dashboard-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.dashboard-table th,
+.dashboard-table td {
+  padding: 0.65rem 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid rgba(19, 38, 61, 0.09);
+}
+
+.dashboard-table th {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #4f6f8e;
+  font-weight: 600;
+}
+
+.dashboard-table tbody tr:hover {
+  background: rgba(15, 122, 153, 0.04);
+}
+
+.dashboard-content-stack {
+  display: grid;
+  gap: 1rem;
+}
+
 .mini-empty-state {
   border-radius: 0.8rem;
   padding: 0.8rem;
@@ -820,6 +850,236 @@ body {
     transform: scale(1.04);
   }
 }
+
+/* ── Transaction History Table ─────────────────────────────── */
+
+.txn-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 0.85rem;
+}
+
+.txn-filter-group {
+  display: flex;
+  align-items: center;
+  gap: 0.42rem;
+}
+
+.txn-filter-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #4b6a89;
+  white-space: nowrap;
+}
+
+.txn-filter-select {
+  border: 1px solid rgba(19, 38, 61, 0.18);
+  border-radius: 0.6rem;
+  padding: 0.3rem 0.6rem;
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--text-main);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.txn-filter-select:focus {
+  outline: 2px solid rgba(15, 122, 153, 0.4);
+  outline-offset: 1px;
+}
+
+.txn-table-wrap {
+  overflow-x: auto;
+  display: block;
+}
+
+@media (max-width: 640px) {
+  .txn-table-wrap {
+    display: none;
+  }
+}
+
+.txn-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.txn-table th,
+.txn-table td {
+  padding: 0.62rem 0.75rem;
+  text-align: left;
+  border-bottom: 1px solid rgba(19, 38, 61, 0.09);
+  white-space: nowrap;
+}
+
+.txn-table th {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #4f6f8e;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.txn-table tbody tr:hover {
+  background: rgba(15, 122, 153, 0.05);
+}
+
+.txn-cell--date {
+  font-size: 0.82rem;
+  color: #4d6985;
+}
+
+.txn-cell--amount {
+  font-family: var(--font-mono), "IBM Plex Mono", monospace;
+  font-weight: 600;
+  color: #183355;
+}
+
+.txn-hash {
+  color: #406180;
+}
+
+/* Type badges */
+.txn-type-badge {
+  display: inline-block;
+  padding: 0.18rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.txn-type-badge--withdrawal {
+  background: rgba(99, 102, 241, 0.12);
+  color: #3730a3;
+}
+
+.txn-type-badge--cancellation {
+  background: rgba(177, 47, 63, 0.1);
+  color: #8c2230;
+}
+
+.txn-type-badge--stream_created {
+  background: rgba(15, 122, 153, 0.12);
+  color: #0d5378;
+}
+
+/* Status badges */
+.txn-status-badge {
+  display: inline-block;
+  padding: 0.18rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.txn-status-badge--completed {
+  background: rgba(16, 185, 129, 0.12);
+  color: #0f7c52;
+}
+
+.txn-status-badge--pending {
+  background: rgba(234, 179, 8, 0.14);
+  color: #7a5c00;
+}
+
+.txn-status-badge--failed {
+  background: rgba(177, 47, 63, 0.1);
+  color: #8c2230;
+}
+
+/* Mobile card list */
+.txn-cards {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .txn-cards {
+    display: grid;
+    gap: 0.65rem;
+  }
+}
+
+.txn-card {
+  border: 1px solid rgba(19, 38, 61, 0.12);
+  border-radius: 0.85rem;
+  background: rgba(255, 255, 255, 0.72);
+  padding: 0.85rem;
+}
+
+.txn-card__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.65rem;
+}
+
+.txn-card__body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.55rem 0.75rem;
+}
+
+.txn-card__label {
+  margin: 0;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #4f6f8e;
+}
+
+.txn-card__value {
+  margin: 0.18rem 0 0;
+  font-size: 0.86rem;
+  color: #13263d;
+}
+
+.txn-card__value--amount {
+  font-family: var(--font-mono), "IBM Plex Mono", monospace;
+  font-weight: 600;
+}
+
+.txn-card__code {
+  display: block;
+  margin-top: 0.18rem;
+  font-size: 0.8rem;
+  color: #406180;
+}
+
+/* Pagination */
+.txn-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.85rem;
+  margin-top: 0.85rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(19, 38, 61, 0.09);
+}
+
+.txn-pagination__btn {
+  height: 2.1rem;
+  padding: 0 0.9rem;
+  font-size: 0.86rem;
+}
+
+.txn-pagination__btn:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+}
+
+.txn-pagination__info {
+  font-size: 0.86rem;
+  color: #4b6a89;
+  min-width: 8ch;
+  text-align: center;
+}
+
+/* ── End Transaction History Table ─────────────────────────── */
 
 .glass-card {
   background: var(--glass);

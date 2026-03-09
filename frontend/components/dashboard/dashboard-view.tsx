@@ -7,6 +7,7 @@ import {
 } from "@/lib/dashboard";
 import { shortenPublicKey, type WalletSession } from "@/lib/wallet";
 import IncomingStreams from "../IncomingStreams";
+import { TransactionHistoryTable } from "./TransactionHistoryTable";
 
 interface DashboardViewProps {
   session: WalletSession;
@@ -197,6 +198,22 @@ export function DashboardView({ session, onDisconnect }: DashboardViewProps) {
   const renderContent = () => {
     if (activeTab === "incoming") {
       return <div className="mt-8"><IncomingStreams /></div>;
+    }
+
+    if (activeTab === "activity") {
+      if (!stats) {
+        return (
+          <section className="dashboard-empty-state mt-8">
+            <h2>No transaction history</h2>
+            <p>Connect a wallet with activity to view your transaction history.</p>
+          </section>
+        );
+      }
+      return (
+        <div className="dashboard-content-stack mt-8">
+          <TransactionHistoryTable transactions={stats.transactions} pageSize={5} />
+        </div>
+      );
     }
 
     if (activeTab === "overview") {

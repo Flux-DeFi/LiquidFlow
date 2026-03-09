@@ -55,7 +55,7 @@ export const UseCases = () => {
                 <div className="text-center mb-20">
                     <h2 className="text-4xl md:text-5xl font-black mb-6">Designed for Every Industry</h2>
                     <p className="text-xl text-slate-400 max-w-3xl mx-auto">
-                        Whether you're a DAO, a startup, or an enterprise, LiquidFlow provides the infrastructure to modernize your capital allocation.
+                        Whether you&apos;re a DAO, a startup, or an enterprise, LiquidFlow provides the infrastructure to modernize your capital allocation.
                     </p>
                 </div>
 
