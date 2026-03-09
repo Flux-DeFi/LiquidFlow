@@ -42,37 +42,14 @@ export default function RootLayout({
           enableSystem={false}
           disableTransitionOnChange
         >
-          <SorobanProvider>
-            <WalletProvider>
-              <ErrorBoundary>
-                <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-                  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xl font-bold text-blue-600">
-                        FlowFi
-                      </span>
-                    </div>
-                    <nav className="flex gap-6">
-                      <Link
-                        href="/"
-                        className="text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-blue-600 transition-colors"
-                      >
-                        Outgoing
-                      </Link>
-                      <Link
-                        href="/incoming"
-                        className="text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-blue-600 transition-colors"
-                      >
-                        Incoming
-                      </Link>
-                    </nav>
-                  </div>
-                </header>
-                {children}
-              </ErrorBoundary>
-              <ToastProvider />
-            </WalletProvider>
-          </SorobanProvider>
+        <SorobanProvider>
+          <WalletProvider>
+            <ErrorBoundary>
+              {children}
+            </ErrorBoundary>
+            <ToastProvider />
+          </WalletProvider>
+        </SorobanProvider>
         </ThemeProvider>
       </body>
     </html>
