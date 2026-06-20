@@ -72,6 +72,71 @@ fn test_create_multiple_streams() {
 }
 
 #[test]
+fn test_create_stream_ids_do_not_collide_within_same_ledger() {
+    let env = Env::default();
+    env.mock_all_auths();
+
+    let (token_address, _admin) = create_token_contract(&env);
+    let sender = Address::generate(&env);
+    let recipient1 = Address::generate(&env);
+    let recipient2 = Address::generate(&env);
+
+    let stellar_asset = soroban_sdk::token::StellarAssetClient::new(&env, &token_address);
+    stellar_asset.mint(&sender, &2_000);
+
+    let contract_id = env.register(StreamContract, ());
+    let client = StreamContractClient::new(&env, &contract_id);
+
+    let token_client = soroban_sdk::token::Client::new(&env, &token_address);
+    token_client.approve(&sender, &contract_id, &1_000, &1_000_000);
+
+    let starting_ledger_sequence = env.ledger().sequence();
+    let stream_id1 = client.create_stream(&sender, &recipient1, &token_address, &500, &86_400);
+    let stream_id2 = client.create_stream(&sender, &recipient2, &token_address, &500, &86_400);
+
+    assert_eq!(env.ledger().sequence(), starting_ledger_sequence);
+    assert_ne!(stream_id1, stream_id2);
+
+    let stream1 = client.get_stream(&stream_id1).unwrap();
+    let stream2 = client.get_stream(&stream_id2).unwrap();
+    assert_eq!(stream1.recipient, recipient1);
+    assert_eq!(stream2.recipient, recipient2);
+}
+
+#[test]
+fn test_top_up_stream_uses_returned_create_stream_id() {
+    let env = Env::default();
+    env.mock_all_auths();
+
+    let (token_address, _admin) = create_token_contract(&env);
+    let sender = Address::generate(&env);
+    let recipient = Address::generate(&env);
+
+    let stellar_asset = soroban_sdk::token::StellarAssetClient::new(&env, &token_address);
+    stellar_asset.mint(&sender, &20_000);
+
+    let contract_id = env.register(StreamContract, ());
+    let client = StreamContractClient::new(&env, &contract_id);
+
+    let token_client = soroban_sdk::token::Client::new(&env, &token_address);
+    token_client.approve(&sender, &contract_id, &15_000, &1_000_000);
+
+    let stream_id = client.create_stream(&sender, &recipient, &token_address, &10_000, &100);
+    let top_up_amount = 5_000i128;
+
+    let result = client.try_top_up_stream(&sender, &stream_id, &top_up_amount);
+    assert_eq!(result, Ok(()));
+
+    env.as_contract(&contract_id, || {
+        let storage = env.storage().persistent();
+        let updated_stream: Stream = storage.get(&(symbol_short!("STREAMS"), stream_id)).unwrap();
+        assert_eq!(updated_stream.sender, sender);
+        assert_eq!(updated_stream.recipient, recipient);
+        assert_eq!(updated_stream.deposited_amount, 15_000);
+    });
+}
+
+#[test]
 fn test_create_stream_transfers_tokens() {
     let env = Env::default();
     env.mock_all_auths();
@@ -128,7 +193,7 @@ fn test_top_up_stream_success() {
     // Mint initial tokens to sender
     token_client.mint(&sender, &1_000_000);
 
-    // Manually create a stream in storage (since create_stream is not fully implemented)
+    // Manually create a stream in storage
     let stream = Stream {
         sender: sender.clone(),
         recipient: recipient.clone(),
