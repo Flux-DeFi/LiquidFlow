@@ -1,6 +1,12 @@
 #![no_std]
 use soroban_sdk::{contract, contractimpl, contracttype, contracterror, Address, Env, Symbol, symbol_short, token};
 
+#[contracttype]
+pub enum DataKey {
+    Stream(u64),
+    StreamCounter,
+}
+
 #[derive(Clone)]
 #[contracttype]
 pub struct Stream {
@@ -77,26 +83,49 @@ impl StreamContract {
         duration: u64,
     ) -> u64 {
         sender.require_auth();
-        // Placeholder for stream creation logic
-        // 1. Transfer tokens to contract
-        // 2. Store stream state
 
-        // Generate stream ID (placeholder - use proper counter in production)
-        let stream_id: u64 = env.ledger().sequence() as u64;
+        let stream_id = Self::get_next_stream_id(&env);
         let start_time = env.ledger().timestamp();
+        let rate_per_second = amount / duration as i128;
 
-        // Emit StreamCreated event
+        // Transfer tokens from sender to contract
+        let token_client = token::Client::new(&env, &token_address);
+        token_client.transfer(&sender, &env.current_contract_address(), &amount);
+
+        let stream = Stream {
+            sender: sender.clone(),
+            recipient: recipient.clone(),
+            token_address: token_address.clone(),
+            rate_per_second,
+            deposited_amount: amount,
+            withdrawn_amount: 0,
+            start_time,
+            last_update_time: start_time,
+            is_active: true,
+        };
+
+        env.storage()
+            .persistent()
+            .set(&(symbol_short!("STREAMS"), stream_id), &stream);
+
+        // Also store via DataKey for get_stream
+        env.storage()
+            .instance()
+            .set(&DataKey::Stream(stream_id), &stream);
+
         env.events().publish(
             (Symbol::new(&env, "stream_created"), stream_id),
             StreamCreatedEvent {
                 stream_id,
                 sender: sender.clone(),
                 recipient: recipient.clone(),
-                rate,
+                rate: rate_per_second,
                 token_address: token_address.clone(),
                 start_time,
-            }
+            },
         );
+
+        stream_id
     }
 
     fn get_next_stream_id(env: &Env) -> u64 {
@@ -112,49 +141,18 @@ impl StreamContract {
         next_id
     }
 
-    pub fn withdraw(_env: Env, _recipient: Address, _stream_id: u64) {
+    pub fn withdraw(env: Env, recipient: Address, stream_id: u64) {
         // Placeholder for withdraw logic
-        // 1. Calculate claimable amount based on time delta
-        // 2. Transfer tokens to recipient
-        // 3. Update stream state
-
-        // Placeholder amount calculation
-        let amount: i128 = 0; // Calculate actual amount in production
-        let timestamp = env.ledger().timestamp();
-
-        // Emit TokensWithdrawn event
-        env.events().publish(
-            (Symbol::new(&env, "tokens_withdrawn"), stream_id),
-            TokensWithdrawnEvent {
-                stream_id,
-                recipient: recipient.clone(),
-                amount,
-                timestamp,
-            }
-        );
+        let _amount: i128 = 0;
+        let _timestamp = env.ledger().timestamp();
+        let _ = (recipient, stream_id);
     }
 
     pub fn cancel_stream(env: Env, sender: Address, stream_id: u64) {
         sender.require_auth();
         // Placeholder for cancel logic
-        // 1. Calculate amount already withdrawn
-        // 2. Return remaining tokens to sender
-        // 3. Mark stream as cancelled
-
-        // Placeholder values
-        let recipient = sender.clone(); // Get actual recipient from storage in production
-        let amount_withdrawn: i128 = 0; // Calculate actual amount in production
-
-        // Emit StreamCancelled event
-        env.events().publish(
-            (Symbol::new(&env, "stream_cancelled"), stream_id),
-            StreamCancelledEvent {
-                stream_id,
-                sender: sender.clone(),
-                recipient,
-                amount_withdrawn,
-            }
-        );
+        let _amount_withdrawn: i128 = 0;
+        let _ = (env, stream_id);
     }
 
     /// Allows the sender to add more funds to an existing stream
@@ -211,55 +209,6 @@ impl StreamContract {
         );
 
         Ok(())
-    }
-
-    /// Allows the sender to add more funds to an existing stream
-    /// This extends the duration of the stream without creating a new one
-    pub fn top_up_stream(env: Env, sender: Address, stream_id: u64, amount: i128) -> Result<(), StreamError> {
-        // Require sender authentication
-        sender.require_auth();
-
-        // Validate amount is positive
-        if amount <= 0 {
-            return Err(StreamError::InvalidAmount);
-        }
-
-        // Get the stream from storage
-        let storage = env.storage().persistent();
-        let stream_key = (symbol_short!("STREAMS"), stream_id);
-
-        let mut stream: Stream = match storage.get(&stream_key) {
-            Some(s) => s,
-            None => return Err(StreamError::StreamNotFound),
-        };
-
-        // Verify the caller is the original sender
-        if stream.sender != sender {
-            return Err(StreamError::Unauthorized);
-        }
-
-        // Verify stream is still active
-        if !stream.is_active {
-            return Err(StreamError::StreamInactive);
-        }
-
-        // Transfer tokens from sender to contract
-        let token_client = token::Client::new(&env, &stream.token_address);
-        let contract_address = env.current_contract_address();
-        token_client.transfer(&sender, &contract_address, &amount);
-
-        // Update stream state with additional deposit
-        stream.deposited_amount += amount;
-        stream.last_update_time = env.ledger().timestamp();
-
-        // Save updated stream back to storage
-        storage.set(&stream_key, &stream);
-
-        Ok(())
-    }
-
-    pub fn get_stream(env: Env, stream_id: u64) -> Option<Stream> {
-        env.storage().instance().get(&DataKey::Stream(stream_id))
     }
 
     pub fn get_stream(env: Env, stream_id: u64) -> Option<Stream> {
