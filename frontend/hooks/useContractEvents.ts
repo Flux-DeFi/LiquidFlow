@@ -86,7 +86,7 @@ export function useStreamEvents(contractId: string, streamId: string | null) {
 
   const streamEvents = streamId
     ? events.filter(
-        (event) =>
+        (event: ContractEvent) =>
           event.data?.stream_id === streamId &&
           filter.eventTypes.includes(event.type)
       )
