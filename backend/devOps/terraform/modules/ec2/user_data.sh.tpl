@@ -98,6 +98,10 @@ DB_PASSWORD=$(echo "$DB_SECRET" | jq -r '.password')
 DB_USERNAME=$(echo "$DB_SECRET" | jq -r '.username')
 
 # Application Environment File
+# The DB password is embedded verbatim in DATABASE_URL below. This is safe because
+# random_password.db (modules/rds/main.tf) restricts override_special to the RFC 3986
+# unreserved punctuation (-_.~), so the password never contains URL-reserved characters
+# and the resulting connection URL is always valid without URL-encoding.
 cat > /home/appuser/app/.env << ENV
 NODE_ENV=${environment}
 PORT=${app_port}
