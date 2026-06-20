@@ -1,5 +1,7 @@
 #![no_std]
-use soroban_sdk::{contract, contractimpl, contracttype, contracterror, Address, Env, Symbol, symbol_short, token};
+use soroban_sdk::{
+    contract, contracterror, contractimpl, contracttype, symbol_short, token, Address, Env, Symbol,
+};
 
 #[contracttype]
 pub enum DataKey {
@@ -157,7 +159,12 @@ impl StreamContract {
 
     /// Allows the sender to add more funds to an existing stream
     /// This extends the duration of the stream without creating a new one
-    pub fn top_up_stream(env: Env, sender: Address, stream_id: u64, amount: i128) -> Result<(), StreamError> {
+    pub fn top_up_stream(
+        env: Env,
+        sender: Address,
+        stream_id: u64,
+        amount: i128,
+    ) -> Result<(), StreamError> {
         // Require sender authentication
         sender.require_auth();
 
@@ -205,7 +212,7 @@ impl StreamContract {
                 sender: sender.clone(),
                 amount,
                 new_deposited_amount: stream.deposited_amount,
-            }
+            },
         );
 
         Ok(())
