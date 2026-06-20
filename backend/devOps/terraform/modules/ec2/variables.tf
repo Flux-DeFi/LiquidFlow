@@ -40,8 +40,9 @@ variable "instance_type" {
 }
 
 variable "ami_id" {
-  description = "AMI ID for EC2 instances (Amazon Linux 2023 recommended)"
+  description = "Optional AMI ID override for EC2 instances. Leave null to auto-resolve the latest Amazon Linux 2023 (x86_64) AMI for the configured region via the aws_ami data source."
   type        = string
+  default     = null
 }
 
 variable "key_name" {

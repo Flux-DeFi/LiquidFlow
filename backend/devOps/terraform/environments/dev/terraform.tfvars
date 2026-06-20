@@ -9,8 +9,10 @@ private_subnet_cidrs = ["10.0.10.0/24", "10.0.20.0/24"]
 availability_zones   = ["us-east-1a", "us-east-1b"]
 
 # EC2
-# Amazon Linux 2023 (us-east-1) — update for other regions
-ami_id        = "ami-0c02fb55956c7d316"
+# ami_id is auto-resolved to the latest Amazon Linux 2023 (x86_64) AMI for
+# aws_region via the aws_ami data source in modules/ec2. Set it here only to
+# pin a specific AMI override.
+# ami_id      = "ami-xxxxxxxxxxxxxxxxx"
 instance_type = "t3.micro"
 
 # RDS
