@@ -14,10 +14,36 @@ locals {
 data "aws_caller_identity" "current" {}
 data "aws_elb_service_account" "main" {}
 
+# AMI LOOKUP — resolves the latest Amazon Linux 2023 (x86_64) AMI for the
+# provider's configured region. This keeps the AMI region-aware instead of
+# hardcoding a single us-east-1 id across every environment, and guarantees an
+# AL2023 image so the dnf-based user_data bootstrap succeeds.
+data "aws_ami" "al2023" {
+  most_recent = true
+  owners      = ["amazon"]
+
+  filter {
+    name   = "name"
+    values = ["al2023-ami-*-x86_64"]
+  }
+
+  filter {
+    name   = "architecture"
+    values = ["x86_64"]
+  }
+
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+}
+
 # LAUNCH TEMPLATE
 resource "aws_launch_template" "app" {
-  name_prefix   = "${local.name_prefix}-lt-"
-  image_id      = var.ami_id
+  name_prefix = "${local.name_prefix}-lt-"
+  # Use the explicit override when provided, otherwise fall back to the
+  # region-aware AL2023 lookup above.
+  image_id      = coalesce(var.ami_id, data.aws_ami.al2023.id)
   instance_type = var.instance_type
   key_name      = var.key_name
 

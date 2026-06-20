@@ -36,8 +36,9 @@ variable "availability_zones" {
 }
 
 variable "ami_id" {
-  description = "AMI ID for EC2 instances (Amazon Linux 2023)"
+  description = "Optional AMI ID override for EC2 instances. Leave null to auto-resolve the latest Amazon Linux 2023 (x86_64) AMI for aws_region."
   type        = string
+  default     = null
 }
 
 variable "instance_type" {
