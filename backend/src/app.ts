@@ -1,9 +1,9 @@
-import express, { type Request, type Response } from 'express';
-import cors from 'cors';
-import swaggerUi from 'swagger-ui-express';
-import { swaggerSpec } from './config/swagger.js';
-import streamRoutes from './routes/stream.routes.js';
-import { globalRateLimiter } from './middleware/rate-limiter.middleware.js';
+import express, { type Request, type Response } from "express";
+import cors from "cors";
+import swaggerUi from "swagger-ui-express";
+import { swaggerSpec } from "./config/swagger.js";
+import streamRoutes from "./routes/stream.routes.js";
+import { globalRateLimiter } from "./middleware/rate-limiter.middleware.js";
 
 const app = express();
 
@@ -14,28 +14,32 @@ app.use(cors());
 app.use(express.json());
 
 // Swagger UI setup
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
-    customCss: '.swagger-ui .topbar { display: none }',
-    customSiteTitle: 'FlowFi API Documentation',
-}));
+app.use(
+  "/api-docs",
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerSpec, {
+    customCss: ".swagger-ui .topbar { display: none }",
+    customSiteTitle: "FlowFi API Documentation",
+  }),
+);
 
 // Serve raw OpenAPI spec as JSON
-app.get('/api-docs.json', (req: Request, res: Response) => {
-    res.setHeader('Content-Type', 'application/json');
-    res.send(swaggerSpec);
+app.get("/api-docs.json", (req: Request, res: Response) => {
+  res.setHeader("Content-Type", "application/json");
+  res.send(swaggerSpec);
 });
 
 // Routes
-app.use('/streams', streamRoutes);
+app.use("/streams", streamRoutes);
 
 // Health check endpoints
 app.use((req: Request, res: Response, next) => {
-    return {
-        status: 'healthy',
-        timestamp: new Date().toISOString(),
-        uptime: process.uptime(),
-        version: '1.0.0',
-    }
+  return {
+    status: "healthy",
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    version: "1.0.0",
+  };
 });
 
 /**
@@ -55,8 +59,8 @@ app.use((req: Request, res: Response, next) => {
  *               type: string
  *               example: FlowFi Backend is running
  */
-app.get('/', (req: Request, res: Response) => {
-    res.send('FlowFi Backend is running');
+app.get("/", (req: Request, res: Response) => {
+  res.send("FlowFi Backend is running");
 });
 
 /**
@@ -90,13 +94,13 @@ app.get('/', (req: Request, res: Response) => {
  *                   type: string
  *                   example: 1.0.0
  */
-app.get('/health', (req: Request, res: Response) => {
-    res.json({
-        status: 'healthy',
-        timestamp: new Date().toISOString(),
-        uptime: process.uptime(),
-        version: '1.0.0',
-    });
+app.get("/health", (req: Request, res: Response) => {
+  res.json({
+    status: "healthy",
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    version: "1.0.0",
+  });
 });
 
 export default app;
