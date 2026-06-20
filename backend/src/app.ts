@@ -3,9 +3,17 @@ import cors from 'cors';
 import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './config/swagger.js';
 import streamRoutes from './routes/stream.routes.js';
-import { globalRateLimiter } from './middleware/rate-limiter.middleware.js';
+import { globalRateLimiter, TRUSTED_PROXY_HOPS } from './middleware/rate-limiter.middleware.js';
 
 const app = express();
+
+// Trust the exact number of reverse proxies in front of the app
+// (AWS ALB -> nginx = 2 hops) so `req.ip` resolves to the real client IP.
+// This must run before the rate limiter so per-client limiting keys on the
+// real client instead of the proxy, and to avoid express-rate-limit's
+// ERR_ERL_UNEXPECTED_X_FORWARDED_FOR error. We trust a fixed hop count
+// rather than `true` to prevent X-Forwarded-For spoofing.
+app.set('trust proxy', TRUSTED_PROXY_HOPS);
 
 // Apply global rate limiter first
 app.use(globalRateLimiter);
