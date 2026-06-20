@@ -53,6 +53,44 @@ resource "aws_s3_bucket_lifecycle_configuration" "access_logs" {
   }
 }
 
+# Bucket policy granting the S3 server-access-logging service write access.
+# With AWS provider 5.x defaulting to BucketOwnerEnforced (ACLs disabled), the
+# legacy log-delivery group ACL no longer works; the logging service principal
+# must be granted s3:PutObject via a bucket policy or access logs silently fail.
+resource "aws_s3_bucket_policy" "access_logs" {
+  bucket = aws_s3_bucket.access_logs.id
+  policy = data.aws_iam_policy_document.access_logs_bucket_policy.json
+
+  depends_on = [aws_s3_bucket_public_access_block.access_logs]
+}
+
+data "aws_iam_policy_document" "access_logs_bucket_policy" {
+  statement {
+    sid       = "AllowS3ServerAccessLogsDelivery"
+    effect    = "Allow"
+    actions   = ["s3:PutObject"]
+    resources = ["${aws_s3_bucket.access_logs.arn}/*"]
+
+    principals {
+      type        = "Service"
+      identifiers = ["logging.s3.amazonaws.com"]
+    }
+
+    # Restrict to logging from the source bucket(s) in this account only.
+    condition {
+      test     = "ArnLike"
+      variable = "aws:SourceArn"
+      values   = [aws_s3_bucket.main.arn]
+    }
+
+    condition {
+      test     = "StringEquals"
+      variable = "aws:SourceAccount"
+      values   = [data.aws_caller_identity.current.account_id]
+    }
+  }
+}
+
 # ─── MAIN APPLICATION BUCKET ──────────────────────────────────────────────────
 resource "aws_s3_bucket" "main" {
   bucket        = "${local.name_prefix}-${var.bucket_purpose}-${data.aws_caller_identity.current.account_id}"
