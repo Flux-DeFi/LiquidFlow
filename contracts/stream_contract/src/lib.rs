@@ -72,6 +72,9 @@ pub struct StreamToppedUpEvent {
 #[contract]
 pub struct StreamContract;
 
+const STREAM_COUNTER_TTL_THRESHOLD: u32 = 172_800;
+const STREAM_COUNTER_TTL_EXTEND_TO: u32 = 518_400;
+
 #[contractimpl]
 impl StreamContract {
     pub fn create_stream(
@@ -138,6 +141,9 @@ impl StreamContract {
         env.storage()
             .instance()
             .set(&DataKey::StreamCounter, &next_id);
+        env.storage()
+            .instance()
+            .extend_ttl(STREAM_COUNTER_TTL_THRESHOLD, STREAM_COUNTER_TTL_EXTEND_TO);
         next_id
     }
 
