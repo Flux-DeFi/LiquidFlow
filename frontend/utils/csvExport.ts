@@ -2,12 +2,24 @@
 
 type CsvRow = Record<string, unknown>;
 
+// Characters that spreadsheet apps (Excel, Google Sheets, LibreOffice) treat
+// as the start of a formula. Cells beginning with any of these can execute as
+// formulas when the CSV is opened — a CSV/formula injection vector.
+const FORMULA_TRIGGERS = ['=', '+', '-', '@', '\t', '\r'];
+
 const escapeCsvCell = (value: unknown): string => {
     if (value === null || value === undefined) {
         return '';
     }
 
-    const text = value instanceof Date ? value.toLocaleString() : String(value);
+    let text = value instanceof Date ? value.toLocaleString() : String(value);
+
+    // Neutralize formula injection by prefixing a single quote so the cell is
+    // always treated as text rather than an executable formula.
+    if (text.length > 0 && FORMULA_TRIGGERS.includes(text[0])) {
+        text = `'${text}`;
+    }
+
     const escaped = text.replace(/"/g, '""');
 
     return /("|,|\n)/.test(escaped) ? `"${escaped}"` : escaped;

@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@soroban-react/chains": "^9.1.13",
@@ -31,6 +33,7 @@
     "eslint-config-next": "16.1.6",
     "lightningcss-linux-x64-gnu": "^1.30.2",
     "tailwindcss": "^4",
-    "typescript": "5.9.3"
+    "typescript": "5.9.3",
+    "vitest": "^2.1.8"
   }
 }
