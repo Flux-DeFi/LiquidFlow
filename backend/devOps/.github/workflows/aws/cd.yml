@@ -105,16 +105,16 @@ jobs:
             # ── Pull new image ────────
             docker pull ${{ secrets.DOCKER_HUB_USER }}/liquidflow-backend:${{ needs.build.outputs.image_tag }}
 
-            # ── Restart services ────────────
+            # ── Restart services (FIXED PATHS HERE) ────────────
             docker compose \
-              -f devOps/docker/docker-compose.yml \
-              -f devOps/docker/docker-compose.prod.yml \
+              -f backend/devOps/docker/docker-compose.yml \
+              -f backend/devOps/docker/docker-compose.prod.yml \
               --env-file .env \
               up -d --remove-orphans
 
-            # ── Prisma migrations ─────────────
+            # ── Prisma migrations (FIXED PATHS HERE) ─────────────
             docker compose \
-              -f devOps/docker/docker-compose.yml \
+              -f backend/devOps/docker/docker-compose.yml \
               --env-file .env \
               exec -T backend npx prisma migrate deploy
 
