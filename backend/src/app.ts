@@ -44,14 +44,16 @@ app.get("/api-docs.json", (req: Request, res: Response) => {
 app.use("/streams", streamRoutes);
 
 // Health check endpoints
-app.use((req: Request, res: Response, next) => {
-  return {
-    status: "healthy",
-    timestamp: new Date().toISOString(),
-    uptime: process.uptime(),
-    version: "1.0.0",
-  };
-});
+// TODO: this middleware intercepts all requests and never calls next() or sends a response
+// — it is effectively dead code. Tracked as a separate issue.
+// app.use((req: Request, res: Response, next) => {
+//   return {
+//     status: "healthy",
+//     timestamp: new Date().toISOString(),
+//     uptime: process.uptime(),
+//     version: "1.0.0",
+//   };
+// });
 
 /**
  * @openapi
