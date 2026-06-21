@@ -24,6 +24,7 @@ ENV NODE_ENV=production
 
 # Install curl for the Docker healthcheck
 RUN apk add --no-cache curl
+RUN addgroup -g 1001 -S appgroup && adduser -u 1001 -S appuser -G appgroup
 
 COPY package.json package-lock.json ./
 RUN npm ci --only=production --fetch-retries=5 --fetch-retry-mintimeout=10000 && npm install @prisma/client
@@ -31,6 +32,10 @@ RUN npm ci --only=production --fetch-retries=5 --fetch-retry-mintimeout=10000 &&
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/src/generated ./src/generated
 COPY --from=builder /app/prisma ./prisma
+
+RUN chown -R appuser:appgroup /app
+
+USER appuser
 
 EXPOSE 3001
 

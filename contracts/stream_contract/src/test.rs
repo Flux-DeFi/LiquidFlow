@@ -3,6 +3,12 @@
 use super::*;
 use soroban_sdk::{Env, testutils::Address as _, Address, token, symbol_short};
 
+fn create_token_contract(env: &Env) -> (Address, Address) {
+    let admin = Address::generate(env);
+    let contract = env.register_stellar_asset_contract_v2(admin.clone());
+    (contract.address(), admin)
+}
+
 #[test]
 fn test_create_stream() {
     let env = Env::default();
@@ -33,10 +39,10 @@ fn test_create_stream() {
     let stream = stream.unwrap();
     assert_eq!(stream.sender, sender);
     assert_eq!(stream.recipient, recipient);
-    assert_eq!(stream.rate, amount);
+    assert_eq!(stream.rate_per_second, amount / duration as i128);
     assert_eq!(stream.token_address, token_address);
-    assert_eq!(stream.duration, duration);
-    assert_eq!(stream.withdrawn, 0);
+    assert_eq!(stream.deposited_amount, amount);
+    assert_eq!(stream.withdrawn_amount, 0);
 }
 
 #[test]

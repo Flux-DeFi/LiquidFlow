@@ -13,9 +13,18 @@ locals {
 
 # ─── RANDOM DB PASSWORD ───────────────────────────────────────────────────────
 resource "random_password" "db" {
-  length           = 32
-  special          = true
-  override_special = "!#$%&*()-_=+[]{}<>:?"
+  length  = 32
+  special = true
+
+  # The password is embedded verbatim into a connection URL in the EC2 bootstrap
+  # (see modules/ec2/user_data.sh.tpl):
+  #   DATABASE_URL=postgresql://USER:PASSWORD@host:port/db
+  # Characters reserved in a URL userinfo component (: @ # = + ? % / & and others)
+  # would corrupt the URL and make Prisma/pg misparse host/port/db, so we restrict
+  # the special set to the RFC 3986 "unreserved" punctuation (-_.~). These are safe
+  # unencoded anywhere in a URL, so the generated DATABASE_URL is always valid
+  # without any shell-side URL-encoding.
+  override_special = "-_.~"
 }
 
 # ─── AWS SECRETS MANAGER (stores DB credentials) ──────────────────────────────
