@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo } from "react";
 import type { Transaction, TransactionType, TransactionStatus } from "@/lib/dashboard";
+import { downloadCSV } from "@/utils/csvExport";
 
 interface TransactionHistoryTableProps {
   transactions: Transaction[];
@@ -68,11 +69,35 @@ export function TransactionHistoryTable({
     setPage(1);
   }
 
+  function handleExport() {
+    const rows = filtered.map((tx) => ({
+      Date: formatTimestamp(tx.timestamp),
+      Type: TYPE_LABELS[tx.type],
+      Stream: tx.streamId,
+      Counterparty: tx.counterparty,
+      Amount: tx.amount,
+      Token: tx.token,
+      "Tx Hash": tx.txHash,
+      Status: STATUS_LABELS[tx.status],
+    }));
+    downloadCSV(rows, "flowfi-transaction-history.csv");
+  }
+
   return (
     <section className="dashboard-panel">
       <div className="dashboard-panel__header">
         <h3>Transaction History</h3>
-        <span>{filtered.length} record{filtered.length !== 1 ? "s" : ""}</span>
+        <div className="dashboard-panel__header-actions">
+          <span>{filtered.length} record{filtered.length !== 1 ? "s" : ""}</span>
+          <button
+            type="button"
+            className="secondary-button"
+            onClick={handleExport}
+            disabled={filtered.length === 0}
+          >
+            Export CSV
+          </button>
+        </div>
       </div>
 
       <div className="txn-filters">

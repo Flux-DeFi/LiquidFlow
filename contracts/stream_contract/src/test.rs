@@ -1,7 +1,7 @@
 #![cfg(test)]
 
 use super::*;
-use soroban_sdk::{Env, testutils::Address as _, Address, token, symbol_short};
+use soroban_sdk::{symbol_short, testutils::Address as _, token, Address, Env};
 
 fn create_token_contract(env: &Env) -> (Address, Address) {
     let admin = Address::generate(env);

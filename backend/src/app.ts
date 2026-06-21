@@ -41,7 +41,7 @@ app.get("/api-docs.json", (req: Request, res: Response) => {
 });
 
 // Routes
-app.use("/streams", streamRoutes);
+app.use('/streams', streamRoutes);
 
 /**
  * @openapi
