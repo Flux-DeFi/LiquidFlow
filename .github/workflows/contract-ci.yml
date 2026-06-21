@@ -1,0 +1,51 @@
+name: Contract CI
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'contracts/**'
+      - '.github/workflows/contract-ci.yml'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'contracts/**'
+      - '.github/workflows/contract-ci.yml'
+
+jobs:
+  test:
+    name: Rust Contract Checks
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./contracts
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          components: clippy, rustfmt
+          targets: wasm32-unknown-unknown
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            contracts -> target
+
+      - name: Check Formatting
+        run: cargo fmt -- --check
+
+      - name: Run Clippy
+        run: cargo clippy --all-targets -- -D warnings
+
+      - name: Run Contract Tests
+        run: cargo test
+
+      - name: Build Contract (WASM)
+        run: cargo build --target wasm32-unknown-unknown --release

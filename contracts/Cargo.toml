@@ -1,3 +1,4 @@
+# LiquidFlow Soroban Smart Contracts Cargo Workspace
 [workspace]
 resolver = "2"
 members = [
