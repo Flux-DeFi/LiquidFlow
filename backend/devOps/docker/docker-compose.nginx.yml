@@ -24,10 +24,10 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ../nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       # TLS certificates consumed by the 443 server block in nginx.conf.
       # Real certs (ACM / Let's Encrypt) are provisioned separately (out of scope).
-      - ./nginx/certs:/etc/nginx/certs:ro
+      - ../nginx/certs:/etc/nginx/certs:ro
     depends_on:
       backend:
         condition: service_healthy # This is the key change
