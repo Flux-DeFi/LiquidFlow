@@ -1,0 +1,5 @@
+# Never commit real TLS certificates or private keys.
+# This directory only exists so the read-only certs volume mount has a target.
+*
+!.gitignore
+!README.md
