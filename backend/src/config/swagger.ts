@@ -4,16 +4,16 @@ const options: swaggerJsdoc.Options = {
   definition: {
     openapi: '3.0.0',
     info: {
-      title: 'FlowFi API',
+      title: 'LiquidFlow API',
       version: '1.0.0',
-      description: 'API documentation for FlowFi - Real-time payment streaming on Stellar',
+      description: 'API documentation for LiquidFlow - Real-time payment streaming on Stellar',
       contact: {
-        name: 'FlowFi Team',
-        url: 'https://github.com/LabsCrypt/flowfi',
+        name: 'LiquidFlow Team',
+        url: 'https://github.com/Flux-DeFi/LiquidFlow',
       },
       license: {
         name: 'MIT',
-        url: 'https://opensource.org/licenses/MIT',
+        url: 'https://github.com/Flux-DeFi/LiquidFlow/blob/main/LICENSE',
       },
     },
     servers: [
