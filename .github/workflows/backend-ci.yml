@@ -77,7 +77,7 @@ jobs:
         DATABASE_URL: postgresql://postgres:postgres@localhost:5432/test_db
     
     - name: Upload coverage reports
-      uses: codecov/codecov-action@v5
+      uses: codecov/codecov-action@v7
       with:
         file: ./backend/coverage/lcov.info
         flags: backend
