@@ -3,13 +3,10 @@ import cors from "cors";
 import swaggerUi from "swagger-ui-express";
 import { swaggerSpec } from "./config/swagger.js";
 import streamRoutes from "./routes/stream.routes.js";
-import { globalRateLimiter } from "./middleware/rate-limiter.middleware.js";
-import express, { type Request, type Response } from 'express';
-import cors from 'cors';
-import swaggerUi from 'swagger-ui-express';
-import { swaggerSpec } from './config/swagger.js';
-import streamRoutes from './routes/stream.routes.js';
-import { globalRateLimiter, TRUSTED_PROXY_HOPS } from './middleware/rate-limiter.middleware.js';
+import {
+  globalRateLimiter,
+  TRUSTED_PROXY_HOPS,
+} from "./middleware/rate-limiter.middleware.js";
 
 const app = express();
 
@@ -19,7 +16,7 @@ const app = express();
 // real client instead of the proxy, and to avoid express-rate-limit's
 // ERR_ERL_UNEXPECTED_X_FORWARDED_FOR error. We trust a fixed hop count
 // rather than `true` to prevent X-Forwarded-For spoofing.
-app.set('trust proxy', TRUSTED_PROXY_HOPS);
+app.set("trust proxy", TRUSTED_PROXY_HOPS);
 
 // Apply global rate limiter first
 app.use(globalRateLimiter);
