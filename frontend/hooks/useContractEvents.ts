@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useWallet } from "@/context/wallet-context";
 
 export interface ContractEvent {
@@ -73,18 +73,23 @@ export function useContractEvents(filter: EventFilter) {
   };
 }
 
-/**
- * Hook for listening to specific stream events
- * Filters events for a particular stream ID
- */
 export function useStreamEvents(contractId: string, streamId: string | null) {
-  const { events, isListening, error } = useContractEvents({
-    contractId,
-    eventTypes: ["stream_created", "tokens_withdrawn", "stream_cancelled", "stream_topped_up"],
-  });
+  const filter = useMemo(
+    () => ({
+      contractId,
+      eventTypes: ["stream_created", "tokens_withdrawn", "stream_cancelled", "stream_topped_up"],
+    }),
+    [contractId]
+  );
+
+  const { events, isListening, error } = useContractEvents(filter);
 
   const streamEvents = streamId
-    ? events.filter((event) => event.data?.stream_id === streamId)
+    ? events.filter(
+        (event: ContractEvent) =>
+          event.data?.stream_id === streamId &&
+          filter.eventTypes.includes(event.type)
+      )
     : [];
 
   return {
