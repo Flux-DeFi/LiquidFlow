@@ -9,11 +9,13 @@ import {
   ArrowUpRight, 
   Settings, 
   Zap,
-  History
+  History,
+  PlusCircle
 } from "lucide-react";
 
 const MENU_ITEMS = [
   { id: "dashboard", label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { id: "create-stream", label: "Create Stream", href: "/create-stream", icon: PlusCircle },
   { id: "incoming", label: "Incoming", href: "/incoming", icon: ArrowDownLeft },
   { id: "outgoing", label: "Outgoing", href: "/outgoing", icon: ArrowUpRight },
   { id: "activity", label: "Activity", href: "/activity", icon: History },
