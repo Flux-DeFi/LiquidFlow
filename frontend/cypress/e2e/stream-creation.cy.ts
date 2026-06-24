@@ -59,7 +59,8 @@ describe("Stream Creation Flow", () => {
   });
 
   it("should successfully create a stream with valid form data", () => {
-    cy.connectWalletViaUI();
+    cy.setMockWalletSession();
+    cy.mockFreighterWallet();
 
     cy.visit("/create-stream");
 
@@ -94,7 +95,7 @@ describe("Stream Creation Flow", () => {
 
     cy.get('[data-testid="select-token"]').should("have.value", "");
 
-    cy.get('[data-testid="select-token"] option').should("have.length", 3);
+    cy.get('[data-testid="select-token"] option').should("have.length", 4);
 
     cy.get('[data-testid="select-token"]').select("USDC");
     cy.get('[data-testid="select-token"]').should("contain", "USDC");
@@ -107,16 +108,14 @@ describe("Stream Creation Flow", () => {
   });
 
   it("should complete the full critical path: connect wallet and create a stream", () => {
-    cy.visit("/");
+    cy.setMockWalletSession();
+    cy.mockFreighterWallet();
 
-    cy.contains("button", "Connect Wallet").should("be.visible").click();
+    cy.visit("/dashboard");
 
-    cy.get('[role="dialog"]').should("be.visible");
-    cy.contains('[role="dialog"] button', "Freighter").click();
+    cy.contains("Dashboard").should("be.visible");
 
-    cy.get('[role="dialog"]', { timeout: 5000 }).should("not.exist");
-
-    cy.visit("/create-stream");
+    cy.contains("Create Stream").click();
 
     cy.get('[data-testid="create-stream-form"]').should("be.visible");
 

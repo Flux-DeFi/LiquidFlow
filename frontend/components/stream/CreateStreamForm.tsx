@@ -32,7 +32,7 @@ export function CreateStreamForm() {
   const { createStream, isLoading, error } = useStreamOperations(MOCK_CONTRACT_ID);
   const [formData, setFormData] = useState<FormData>({
     recipient: "",
-    tokenAddress: SUPPORTED_TOKENS[0].address,
+    tokenAddress: "",
     amount: "",
     duration: "",
   });
@@ -171,6 +171,7 @@ export function CreateStreamForm() {
             className="w-full rounded-xl border border-glass-border bg-glass px-4 py-3 text-sm text-foreground focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/30"
             data-testid="select-token"
           >
+            <option value="">Select a token</option>
             {SUPPORTED_TOKENS.map((token) => (
               <option key={token.address} value={token.address}>
                 {token.symbol}

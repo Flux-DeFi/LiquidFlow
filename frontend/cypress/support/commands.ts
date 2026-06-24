@@ -6,6 +6,7 @@ declare global {
     interface Chainable {
       mockFreighterWallet(): Chainable<void>;
       connectWalletViaUI(): Chainable<void>;
+      setMockWalletSession(): Chainable<void>;
     }
   }
 }
@@ -45,4 +46,22 @@ Cypress.Commands.add("connectWalletViaUI", () => {
   cy.contains('[role="dialog"] button', "Freighter").click();
 
   cy.get('[role="dialog"]').should("not.exist");
+});
+
+Cypress.Commands.add("setMockWalletSession", () => {
+  const session = {
+    walletId: "freighter",
+    walletName: "Freighter",
+    publicKey: MOCK_PUBLIC_KEY,
+    connectedAt: new Date().toISOString(),
+    network: "Stellar Testnet",
+    mocked: true,
+  };
+
+  cy.window().then((win) => {
+    win.localStorage.setItem(
+      "flowfi.wallet.session.v1",
+      JSON.stringify(session),
+    );
+  });
 });
