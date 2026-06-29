@@ -30,7 +30,7 @@ app.use(
   swaggerUi.serve,
   swaggerUi.setup(swaggerSpec, {
     customCss: ".swagger-ui .topbar { display: none }",
-    customSiteTitle: "FlowFi API Documentation",
+    customSiteTitle: "LiquidFlow API Documentation",
   }),
 );
 
@@ -58,10 +58,10 @@ app.use('/streams', streamRoutes);
  *           text/plain:
  *             schema:
  *               type: string
- *               example: FlowFi Backend is running
+ *               example: LiquidFlow Backend is running
  */
 app.get("/", (req: Request, res: Response) => {
-  res.send("FlowFi Backend is running");
+  res.send("LiquidFlow Backend is running");
 });
 
 /**

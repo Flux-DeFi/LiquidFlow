@@ -7,7 +7,7 @@ describe('Health check endpoints', () => {
     const response = await request(app).get('/');
 
     expect(response.status).toBe(200);
-    expect(response.text).toBe('FlowFi Backend is running');
+    expect(response.text).toBe('LiquidFlow Backend is running');
   });
 
   it('GET /health returns 200 with health payload', async () => {
