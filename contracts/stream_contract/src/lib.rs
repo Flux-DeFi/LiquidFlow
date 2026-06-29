@@ -145,15 +145,12 @@ impl StreamContract {
 
     pub fn withdraw(env: Env, recipient: Address, stream_id: u64) {
         // Placeholder for withdraw logic
-        let _amount: i128 = 0;
-        let _timestamp = env.ledger().timestamp();
-        let _ = (recipient, stream_id);
+        let _ = (env, recipient, stream_id);
     }
 
     pub fn cancel_stream(env: Env, sender: Address, stream_id: u64) {
         sender.require_auth();
         // Placeholder for cancel logic
-        let _amount_withdrawn: i128 = 0;
         let _ = (env, stream_id);
     }
 
