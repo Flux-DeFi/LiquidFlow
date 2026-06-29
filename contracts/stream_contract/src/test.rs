@@ -34,15 +34,15 @@ fn test_create_stream() {
 
     assert_eq!(stream_id, 1);
 
-    let stream = client.get_stream(&stream_id);
-    assert!(stream.is_some());
-    let stream = stream.unwrap();
-    assert_eq!(stream.sender, sender);
-    assert_eq!(stream.recipient, recipient);
-    assert_eq!(stream.rate_per_second, amount / duration as i128);
-    assert_eq!(stream.token_address, token_address);
-    assert_eq!(stream.deposited_amount, amount);
-    assert_eq!(stream.withdrawn_amount, 0);
+    let stream_opt = client.get_stream(&stream_id);
+    assert!(stream_opt.is_some());
+    let stream_data = stream_opt.unwrap();
+    assert_eq!(stream_data.sender, sender);
+    assert_eq!(stream_data.recipient, recipient);
+    assert_eq!(stream_data.rate_per_second, amount / duration as i128);
+    assert_eq!(stream_data.token_address, token_address);
+    assert_eq!(stream_data.deposited_amount, amount);
+    assert_eq!(stream_data.withdrawn_amount, 0);
 }
 
 #[test]
