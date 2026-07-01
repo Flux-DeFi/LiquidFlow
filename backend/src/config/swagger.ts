@@ -13,7 +13,7 @@ const options: swaggerJsdoc.Options = {
       },
       license: {
         name: 'MIT',
-        url: 'https://opensource.org/licenses/MIT',
+        url: 'https://github.com/Flux-DeFi/LiquidFlow/blob/main/LICENSE',
       },
     },
     servers: [
