@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useWallet } from "@/context/wallet-context";
 
 export interface QueryOptions {
@@ -27,6 +27,14 @@ export function useContractQuery<T = unknown>(options: QueryOptions): QueryState
   const [data, setData] = useState<T | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Derive a stable serialization key from args so that a functionally identical
+  // array (e.g. [streamId] recreated on each render) does not change the identity
+  // of fetchData and trigger the effect on every commit.
+  const argsKey = useMemo(
+    () => JSON.stringify(options.args ?? []),
+    [options.args],
+  );
 
   const fetchData = useCallback(async () => {
     if (!session || options.enabled === false) {
@@ -55,7 +63,7 @@ export function useContractQuery<T = unknown>(options: QueryOptions): QueryState
     } finally {
       setIsLoading(false);
     }
-  }, [session, options.contractId, options.method, options.args, options.enabled]);
+  }, [session, options.contractId, options.method, argsKey, options.enabled]);
 
   useEffect(() => {
     fetchData();
