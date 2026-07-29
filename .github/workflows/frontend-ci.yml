@@ -21,7 +21,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [20.19.x, 22.12.x]
+        node-version: [20.19.x, 22.13.x]
 
     steps:
       - name: Checkout code
@@ -32,8 +32,10 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
+      # The workspace root's `prepare` script runs husky, so the root's own
+      # devDependencies have to come along even though only frontend is built.
       - name: Install dependencies
-        run: npm install --workspace=frontend
+        run: npm install --workspace=frontend --include-workspace-root
 
       - name: Lint
         working-directory: ./frontend
