@@ -27,6 +27,14 @@ FlowFi consists of three main components:
 
 ## Project Structure
 
+FlowFi is an npm-workspaces monorepo with three top-level packages:
+
+- **`contracts/`** — Soroban smart contracts written in Rust, managed as a separate Cargo workspace (not part of the npm workspaces below).
+- **`backend/`** — Express.js + TypeScript API using Prisma ORM against PostgreSQL.
+- **`frontend/`** — Next.js + Tailwind CSS dashboard, integrating with Soroban/Freighter for wallet interactions.
+
+The root `package.json` declares `"workspaces": ["frontend", "backend"]`, so a single `npm install` at the repo root installs dependencies for both `frontend/` and `backend/`. `contracts/` is a standalone Rust/Cargo workspace and is built independently with `cargo` from inside `contracts/`. Each package's dev/build/test scripts (`npm run dev`, `cargo build`, etc.) are still run from within that package's own directory — see [Quick Start](#quick-start) below for the exact commands.
+
 ```
 flowfi/
 ├── backend/                    # Express.js + TypeScript backend
