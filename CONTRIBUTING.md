@@ -75,34 +75,11 @@ Make sure you have the following installed:
 
 ##  Option 1: Docker (Recommended)
 
-The fastest way to run the full stack locally:
+The fastest way to run Postgres + the backend locally is via Docker Compose.
 
-```bash
-docker compose up --build
-```
+See **[backend/devOps/docs/DOCKER-LOCAL.md](backend/devOps/docs/DOCKER-LOCAL.md)** for the full containerized setup: exact `docker compose` invocation, environment file, first-time Prisma migration steps, exposed ports, and troubleshooting.
 
-This starts:
-
-* PostgreSQL (port 5432)
-* Backend API (port 3001)
-
-To run in detached mode:
-
-```bash
-docker compose up -d --build
-```
-
-To stop services:
-
-```bash
-docker compose down
-```
-
-To reset the database:
-
-```bash
-docker compose down -v
-```
+The frontend is not part of that compose stack — run it separately with the Frontend steps below.
 
 ---
 
@@ -113,6 +90,10 @@ docker compose down -v
 ```bash
 cd backend
 npm install
+cp .env.example .env
+# edit .env — set DATABASE_URL for your local Postgres, STELLAR_HORIZON_URL, etc.
+npx prisma generate
+npx prisma migrate dev
 npm run dev
 ```
 
@@ -132,6 +113,8 @@ npm install
 npm run dev
 ```
 
+No environment variables are currently required for local frontend development.
+
 Frontend runs on:
 
 ```
@@ -144,8 +127,14 @@ http://localhost:3000
 
 ```bash
 cd contracts
+rustup target add wasm32-unknown-unknown   # one-time
 cargo build --target wasm32-unknown-unknown --release
+cargo test
+cargo fmt -- --check
+cargo clippy --all-targets -- -D warnings
 ```
+
+The [Stellar CLI](https://developers.stellar.org/docs/tools/developer-tools#cli) is optional and only needed for deploying/interacting with a built contract, not for building or testing it.
 
 ---
 
