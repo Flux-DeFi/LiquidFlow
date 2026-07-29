@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { useContractQuery } from "./useContractQuery";
 import { useWallet } from "@/context/wallet-context";
 
@@ -16,6 +17,9 @@ export interface StreamData {
   isActive: boolean;
 }
 
+// Shared empty result so consumers never see a new array identity per render.
+const NO_STREAMS: StreamData[] = [];
+
 /**
  * Hook for fetching stream data from the contract
  * Automatically refetches when stream ID or contract changes
@@ -23,10 +27,12 @@ export interface StreamData {
 export function useStreamData(contractId: string, streamId: string | null) {
   const { session } = useWallet();
 
+  const args = useMemo(() => (streamId ? [streamId] : undefined), [streamId]);
+
   const { data, isLoading, error, refetch } = useContractQuery<StreamData>({
     contractId,
     method: "get_stream",
-    args: streamId ? [streamId] : undefined,
+    args,
     enabled: !!session && !!streamId,
   });
 
@@ -48,17 +54,22 @@ export function useUserStreams(
   options?: { refetchInterval?: number }
 ) {
   const { session } = useWallet();
+  const publicKey = session?.publicKey ?? null;
+
+  const args = useMemo(() => (publicKey ? [publicKey] : undefined), [publicKey]);
 
   const { data, isLoading, error, refetch } = useContractQuery<StreamData[]>({
     contractId,
     method: type === "incoming" ? "get_incoming_streams" : "get_outgoing_streams",
-    args: session ? [session.publicKey] : undefined,
+    args,
     enabled: !!session,
     refetchInterval: options?.refetchInterval,
   });
 
+  const streams = useMemo(() => data ?? NO_STREAMS, [data]);
+
   return {
-    streams: data || [],
+    streams,
     isLoading,
     error,
     refetch,

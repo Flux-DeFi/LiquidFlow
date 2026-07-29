@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useWallet } from "@/context/wallet-context";
+import { simulateContractQuery } from "@/lib/contract-query";
+import { useStableIdentity } from "./useStableIdentity";
 
 export interface QueryOptions {
   contractId: string;
@@ -28,8 +30,15 @@ export function useContractQuery<T = unknown>(options: QueryOptions): QueryState
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const { contractId, method, enabled, refetchInterval } = options;
+
+  // Callers pass their arguments inline (`args: streamId ? [streamId] : undefined`),
+  // so the array is a new object on every render. Keying on the serialized value
+  // instead of the array identity keeps `fetchData` stable for unchanged inputs.
+  const args = useStableIdentity(options.args);
+
   const fetchData = useCallback(async () => {
-    if (!session || options.enabled === false) {
+    if (!session || enabled === false) {
       return;
     }
 
@@ -37,34 +46,40 @@ export function useContractQuery<T = unknown>(options: QueryOptions): QueryState
     setError(null);
 
     try {
-      // TODO: Implement actual contract query using stellar-sdk
-      // This should simulate the contract call without submitting a transaction
-      console.log("Querying contract:", {
-        contract: options.contractId,
-        method: options.method,
-        args: options.args,
-      });
-
-      // Mock data for now
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      const mockData = { success: true, result: null } as T;
-      setData(mockData);
+      const result = await simulateContractQuery<T>({ contractId, method, args });
+      setData(result);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Query failed";
       setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
-  }, [session, options.contractId, options.method, options.args, options.enabled]);
+  }, [session, contractId, method, args, enabled]);
 
   useEffect(() => {
-    fetchData();
+    void fetchData();
+  }, [fetchData]);
 
-    if (options.refetchInterval && options.refetchInterval > 0) {
-      const interval = setInterval(fetchData, options.refetchInterval);
-      return () => clearInterval(interval);
+  // The interval reads the current fetcher through a ref so the timer is only
+  // rebuilt when the schedule itself changes, never because an unrelated
+  // render produced a new `fetchData`.
+  const fetchDataRef = useRef(fetchData);
+
+  useEffect(() => {
+    fetchDataRef.current = fetchData;
+  }, [fetchData]);
+
+  useEffect(() => {
+    if (!session || enabled === false || !refetchInterval || refetchInterval <= 0) {
+      return;
     }
-  }, [fetchData, options.refetchInterval]);
+
+    const interval = setInterval(() => {
+      void fetchDataRef.current();
+    }, refetchInterval);
+
+    return () => clearInterval(interval);
+  }, [session, enabled, refetchInterval]);
 
   return {
     data,
