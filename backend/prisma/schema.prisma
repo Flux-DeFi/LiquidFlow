@@ -32,6 +32,7 @@ model Stream {
   recipient         String    // Recipient's Stellar public key
   tokenAddress      String    // Token contract address
   ratePerSecond     String    // Rate as string to preserve precision (i128)
+  remainder         String    @default("0") // Tracked remainder (i128)
   depositedAmount   String    // Total deposited amount (i128)
   withdrawnAmount   String    // Total withdrawn amount (i128)
   startTime         Int       // Unix timestamp when stream started

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useWallet } from "@/context/wallet-context";
 import { simulateContractQuery } from "@/lib/contract-query";
 import { useStableIdentity } from "./useStableIdentity";
@@ -30,12 +30,13 @@ export function useContractQuery<T = unknown>(options: QueryOptions): QueryState
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { contractId, method, enabled, refetchInterval } = options;
-
-  // Callers pass their arguments inline (`args: streamId ? [streamId] : undefined`),
-  // so the array is a new object on every render. Keying on the serialized value
-  // instead of the array identity keeps `fetchData` stable for unchanged inputs.
-  const args = useStableIdentity(options.args);
+  // Derive a stable serialization key from args so that a functionally identical
+  // array (e.g. [streamId] recreated on each render) does not change the identity
+  // of fetchData and trigger the effect on every commit.
+  const argsKey = useMemo(
+    () => JSON.stringify(options.args ?? []),
+    [options.args],
+  );
 
   const fetchData = useCallback(async () => {
     if (!session || enabled === false) {
@@ -54,16 +55,7 @@ export function useContractQuery<T = unknown>(options: QueryOptions): QueryState
     } finally {
       setIsLoading(false);
     }
-  }, [session, contractId, method, args, enabled]);
-
-  useEffect(() => {
-    void fetchData();
-  }, [fetchData]);
-
-  // The interval reads the current fetcher through a ref so the timer is only
-  // rebuilt when the schedule itself changes, never because an unrelated
-  // render produced a new `fetchData`.
-  const fetchDataRef = useRef(fetchData);
+  }, [session, options.contractId, options.method, argsKey, options.enabled]);
 
   useEffect(() => {
     fetchDataRef.current = fetchData;

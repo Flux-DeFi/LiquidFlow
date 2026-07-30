@@ -27,7 +27,12 @@ const NO_STREAMS: StreamData[] = [];
 export function useStreamData(contractId: string, streamId: string | null) {
   const { session } = useWallet();
 
-  const args = useMemo(() => (streamId ? [streamId] : undefined), [streamId]);
+  // Memoize args array so its identity is stable across renders when streamId
+  // hasn't changed, preventing the useContractQuery effect from re-running.
+  const args = useMemo(
+    () => (streamId ? [streamId] : undefined),
+    [streamId],
+  );
 
   const { data, isLoading, error, refetch } = useContractQuery<StreamData>({
     contractId,
@@ -57,6 +62,13 @@ export function useUserStreams(
   const publicKey = session?.publicKey ?? null;
 
   const args = useMemo(() => (publicKey ? [publicKey] : undefined), [publicKey]);
+
+  // Memoize args array to prevent useContractQuery from re-fetching on every
+  // render when session.publicKey hasn't changed.
+  const args = useMemo(
+    () => (session ? [session.publicKey] : undefined),
+    [session?.publicKey],
+  );
 
   const { data, isLoading, error, refetch } = useContractQuery<StreamData[]>({
     contractId,

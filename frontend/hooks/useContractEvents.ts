@@ -36,6 +36,13 @@ export function useContractEvents(eventFilter: EventFilter) {
   // Derive error from session state
   const error = !session ? "Wallet not connected" : null;
 
+  // Use a stable key for the filter object so an inline object identity
+  // change does not trigger the effect on every render.
+  const filterKey = useMemo(
+    () => JSON.stringify(filter),
+    [filter],
+  );
+
   useEffect(() => {
     if (!session) {
       return;
@@ -61,7 +68,7 @@ export function useContractEvents(eventFilter: EventFilter) {
       }
       setIsListening(false);
     };
-  }, [session, filter]);
+  }, [session, filterKey]);
 
   const stopListening = useCallback(() => {
     if (intervalRef.current) {

@@ -16,6 +16,22 @@ FlowFi consists of three main components:
 - **Backend**: Express.js API with TypeScript, Prisma ORM, and PostgreSQL
 - **Smart Contracts**: Soroban contracts written in Rust for on-chain logic
 
+### Data Flow: Contract Event → Dashboard
+
+The diagram below shows how a stream event on-chain is intended to reach the dashboard. Each edge is labeled with its current status:
+
+```mermaid
+flowchart LR
+    C[Soroban Contract\nstream_contract] -->|Implemented| H[Stellar Horizon]
+    H -->|Planned: listener/indexer| I[Backend Indexer]
+    I -->|Planned: Prisma writes| D[(PostgreSQL\nStream / StreamEvent)]
+    D -->|Planned| A[Backend API]
+    A -->|Planned| F[Frontend Dashboard]
+```
+
+- **Implemented**: `contracts/stream_contract/src/lib.rs` emits real Soroban events (`stream_created`, `stream_topped_up`, etc.) on every state change.
+- **Planned**: a Horizon listener/indexer that consumes those events and writes to the `Stream`/`StreamEvent` Prisma models (schema already exists at `backend/prisma/schema.prisma`), a backend API that serves that data, and a frontend that consumes it live. Today, `createStream` returns a mock response, `frontend/hooks/useContractEvents.ts` is a stub, and the dashboard renders hardcoded mock data (`frontend/lib/dashboard.ts`).
+
 ## Features
 
 - **Real-time Streaming**: Pay by the second for services or salaries
@@ -26,6 +42,14 @@ FlowFi consists of three main components:
 - **Developer Tools**: Comprehensive API documentation with Swagger
 
 ## Project Structure
+
+FlowFi is an npm-workspaces monorepo with three top-level packages:
+
+- **`contracts/`** — Soroban smart contracts written in Rust, managed as a separate Cargo workspace (not part of the npm workspaces below).
+- **`backend/`** — Express.js + TypeScript API using Prisma ORM against PostgreSQL.
+- **`frontend/`** — Next.js + Tailwind CSS dashboard, integrating with Soroban/Freighter for wallet interactions.
+
+The root `package.json` declares `"workspaces": ["frontend", "backend"]`, so a single `npm install` at the repo root installs dependencies for both `frontend/` and `backend/`. `contracts/` is a standalone Rust/Cargo workspace and is built independently with `cargo` from inside `contracts/`. Each package's dev/build/test scripts (`npm run dev`, `cargo build`, etc.) are still run from within that package's own directory — see [Quick Start](#quick-start) below for the exact commands.
 
 ```
 flowfi/

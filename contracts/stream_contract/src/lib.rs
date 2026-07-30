@@ -16,6 +16,7 @@ pub struct Stream {
     pub recipient: Address,
     pub token_address: Address,
     pub rate_per_second: i128,
+    pub remainder: i128,
     pub deposited_amount: i128,
     pub withdrawn_amount: i128,
     pub start_time: u64,
@@ -40,6 +41,7 @@ pub struct StreamCreatedEvent {
     pub sender: Address,
     pub recipient: Address,
     pub rate: i128,
+    pub remainder: i128,
     pub token_address: Address,
     pub start_time: u64,
 }
@@ -68,6 +70,7 @@ pub struct StreamToppedUpEvent {
     pub stream_id: u64,
     pub sender: Address,
     pub amount: i128,
+    pub new_remainder: i128,
     pub new_deposited_amount: i128,
 }
 
@@ -92,6 +95,10 @@ impl StreamContract {
         let stream_id = Self::get_next_stream_id(&env);
         let start_time = env.ledger().timestamp();
         let rate_per_second = amount / duration as i128;
+        if rate_per_second == 0 {
+            soroban_sdk::panic_with_error!(&env, StreamError::InvalidAmount);
+        }
+        let remainder = amount % duration as i128;
 
         // Transfer tokens from sender to contract
         let token_client = token::Client::new(&env, &token_address);
@@ -102,6 +109,7 @@ impl StreamContract {
             recipient: recipient.clone(),
             token_address: token_address.clone(),
             rate_per_second,
+            remainder,
             deposited_amount: amount,
             withdrawn_amount: 0,
             start_time,
@@ -125,6 +133,7 @@ impl StreamContract {
                 sender: sender.clone(),
                 recipient: recipient.clone(),
                 rate: rate_per_second,
+                remainder,
                 token_address: token_address.clone(),
                 start_time,
             },
@@ -202,6 +211,12 @@ impl StreamContract {
 
         // Update stream state with additional deposit
         stream.deposited_amount += amount;
+        stream.remainder += amount; // We just add to remainder for now since top-up extends duration? Wait, top-up doesn't change rate_per_second, it just adds to deposited amount, which means it extends duration.
+                                    // Let's do: stream.remainder = stream.deposited_amount % stream.rate_per_second (if we are treating top up as extending duration without rate change)
+                                    // Wait! The issue says: "This extends the duration of the stream without creating a new one".
+                                    // duration = deposited_amount / rate. Remainder = deposited_amount % rate.
+        stream.remainder = stream.deposited_amount % stream.rate_per_second;
+
         stream.last_update_time = env.ledger().timestamp();
 
         // Save updated stream back to storage
@@ -214,6 +229,7 @@ impl StreamContract {
                 stream_id,
                 sender: sender.clone(),
                 amount,
+                new_remainder: stream.remainder,
                 new_deposited_amount: stream.deposited_amount,
             },
         );
