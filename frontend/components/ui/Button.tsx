@@ -1,11 +1,28 @@
 import React from 'react';
 
+/**
+ * Props for {@link Button}. All native button attributes, including
+ * `children`, `disabled`, `onClick`, and `type`, are also supported.
+ */
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+    /** Visual treatment applied to the button. @default 'primary' */
     variant?: 'primary' | 'secondary' | 'outline' | 'ghost';
+    /** Controls the button's padding and text size. @default 'md' */
     size?: 'sm' | 'md' | 'lg';
+    /** Adds the accent glow treatment when true. @default false */
     glow?: boolean;
 }
 
+/**
+ * Shared action button with LiquidFlow variants and sizes.
+ *
+ * @example
+ * ```tsx
+ * <Button variant="outline" size="sm" type="button">
+ *   Review stream
+ * </Button>
+ * ```
+ */
 export const Button: React.FC<ButtonProps> = ({
     children,
     className = '',
