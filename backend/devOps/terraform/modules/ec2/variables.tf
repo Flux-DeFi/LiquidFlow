@@ -121,3 +121,38 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Disk / memory exhaustion alarms (see main.tf for the alarm resources and
+# user_data.sh.tpl for the CloudWatch agent config that publishes the metrics)
+# ─────────────────────────────────────────────────────────────────────────────
+
+variable "disk_utilization_threshold" {
+  description = "Root-volume disk utilization %% above which the disk-high alarm fires. Default 85% leaves roughly 15% headroom on the 30GB gp3 root volume so there's time to rotate logs, clear caches, or resize the volume before the disk actually fills and writes start failing."
+  type        = number
+  default     = 85
+}
+
+variable "memory_utilization_threshold" {
+  description = "Memory utilization %% above which the memory-high alarm fires. Default 90% because the Node.js/PM2 app runs on memory-constrained instance types (e.g. t3.micro); sustained usage above 90% risks the OOM killer terminating the process before PM2 can recover gracefully."
+  type        = number
+  default     = 90
+}
+
+variable "alarm_evaluation_periods" {
+  description = "Number of consecutive periods a disk/memory threshold breach must persist before the alarm fires. Default 3 avoids paging on a single noisy sample while still catching a sustained exhaustion trend quickly."
+  type        = number
+  default     = 3
+}
+
+variable "alarm_period_seconds" {
+  description = "Evaluation period, in seconds, for the disk/memory alarms. Matches the CloudWatch agent's 60s metrics_collection_interval configured in user_data.sh.tpl."
+  type        = number
+  default     = 60
+}
+
+variable "sns_alarm_emails" {
+  description = "Optional list of email addresses to subscribe to the EC2 resource-alarm SNS topic (disk/memory exhaustion notifications)"
+  type        = list(string)
+  default     = []
+}

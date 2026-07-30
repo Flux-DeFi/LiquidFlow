@@ -296,7 +296,7 @@ resource "aws_autoscaling_group" "app" {
 
   launch_template {
     id      = aws_launch_template.app.id
-    version = "$Default"  # Use $Default so new template versions are gated before rollout
+    version = "$Default" # Use $Default so new template versions are gated before rollout
   }
 
   instance_refresh {
@@ -371,6 +371,87 @@ resource "aws_cloudwatch_metric_alarm" "cpu_low" {
   threshold           = var.cpu_scale_in_threshold
   alarm_description   = "Triggers scale-in when CPU <= ${var.cpu_scale_in_threshold}%"
   alarm_actions       = [aws_autoscaling_policy.scale_in.arn]
+
+  dimensions = {
+    AutoScalingGroupName = aws_autoscaling_group.app.name
+  }
+
+  tags = local.common_tags
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# DISK / MEMORY EXHAUSTION ALARMS
+#
+# Disk and memory metrics are NOT part of the default AWS/EC2 CloudWatch
+# namespace (only CPU, network, and status-check metrics are). They are
+# published by the CloudWatch agent installed via user_data.sh.tpl, which
+# writes "disk_used_percent" and "mem_used_percent" into the
+# "LiquidFlow/${var.environment}" custom namespace, dimensioned by
+# AutoScalingGroupName (and InstanceId). We alarm on the AutoScalingGroupName
+# dimension rather than a specific InstanceId since ASG instances are
+# ephemeral and get replaced by instance refreshes/scaling events.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# SNS TOPIC — EC2 RESOURCE ALARMS
+# No SNS topic existed elsewhere in this terraform config for alarm
+# notifications, so a minimal dedicated topic is created here.
+resource "aws_sns_topic" "ec2_alarms" {
+  name = "${local.name_prefix}-ec2-alarms"
+  tags = local.common_tags
+}
+
+resource "aws_sns_topic_subscription" "ec2_alarms_email" {
+  for_each  = toset(var.sns_alarm_emails)
+  topic_arn = aws_sns_topic.ec2_alarms.arn
+  protocol  = "email"
+  endpoint  = each.value
+}
+
+# CLOUDWATCH: DISK UTILIZATION HIGH
+# Threshold rationale: 85% (var.disk_utilization_threshold) leaves ~15%
+# headroom on the 30GB gp3 root volume (see block_device_mappings above) —
+# enough runway to rotate/ship app logs, clear dnf/npm caches, or resize the
+# volume before the disk actually fills and writes start failing.
+resource "aws_cloudwatch_metric_alarm" "disk_high" {
+  alarm_name          = "${local.name_prefix}-disk-high"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = var.alarm_evaluation_periods
+  metric_name         = "disk_used_percent"
+  namespace           = "LiquidFlow/${var.environment}"
+  period              = var.alarm_period_seconds
+  statistic           = "Average"
+  threshold           = var.disk_utilization_threshold
+  treat_missing_data  = "breaching"
+  alarm_description   = "Root volume disk usage >= ${var.disk_utilization_threshold}% for ${var.alarm_evaluation_periods} consecutive ${var.alarm_period_seconds}s periods, reported by the CloudWatch agent."
+  alarm_actions       = [aws_sns_topic.ec2_alarms.arn]
+  ok_actions          = [aws_sns_topic.ec2_alarms.arn]
+
+  dimensions = {
+    AutoScalingGroupName = aws_autoscaling_group.app.name
+  }
+
+  tags = local.common_tags
+}
+
+# CLOUDWATCH: MEMORY UTILIZATION HIGH
+# Threshold rationale: 90% (var.memory_utilization_threshold) — the app runs
+# as a Node.js/PM2 process on memory-constrained instance types (default
+# t3.micro). Sustained usage above 90% risks the kernel OOM-killer terminating
+# the process before PM2 can gracefully restart it, so we alarm before that
+# failure point rather than waiting for the health check to notice downtime.
+resource "aws_cloudwatch_metric_alarm" "memory_high" {
+  alarm_name          = "${local.name_prefix}-memory-high"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = var.alarm_evaluation_periods
+  metric_name         = "mem_used_percent"
+  namespace           = "LiquidFlow/${var.environment}"
+  period              = var.alarm_period_seconds
+  statistic           = "Average"
+  threshold           = var.memory_utilization_threshold
+  treat_missing_data  = "breaching"
+  alarm_description   = "Memory usage >= ${var.memory_utilization_threshold}% for ${var.alarm_evaluation_periods} consecutive ${var.alarm_period_seconds}s periods, reported by the CloudWatch agent."
+  alarm_actions       = [aws_sns_topic.ec2_alarms.arn]
+  ok_actions          = [aws_sns_topic.ec2_alarms.arn]
 
   dimensions = {
     AutoScalingGroupName = aws_autoscaling_group.app.name
