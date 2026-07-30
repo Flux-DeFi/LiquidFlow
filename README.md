@@ -45,7 +45,7 @@ flowchart LR
 
 FlowFi is an npm-workspaces monorepo with three top-level packages:
 
-- **`contracts/`** — Soroban smart contracts written in Rust, managed as a separate Cargo workspace (not part of the npm workspaces below).
+- **[`contracts/`](contracts/README.md)** — Soroban smart contracts written in Rust, managed as a separate Cargo workspace (not part of the npm workspaces below). See the contract guide for prerequisites and exact build, test, and testnet deployment commands.
 - **`backend/`** — Express.js + TypeScript API using Prisma ORM against PostgreSQL.
 - **`frontend/`** — Next.js + Tailwind CSS dashboard, integrating with Soroban/Freighter for wallet interactions.
 
@@ -184,6 +184,9 @@ The frontend will be available at `http://localhost:3000`
 
 #### Smart Contracts
 
+See [`contracts/README.md`](contracts/README.md) for prerequisites, CI-aligned
+checks, and testnet deployment instructions.
+
 1. **Build the contracts:**
    ```bash
    cd contracts
@@ -192,7 +195,6 @@ The frontend will be available at `http://localhost:3000`
 
 2. **For contract development and testing:**
    ```bash
-   cd stream_contract
    cargo test
    ```
 
@@ -277,6 +279,9 @@ docker compose -f docker-compose.prod.yml up -d --build
 
 ### Contract Deployment
 
+See the [contract guide](contracts/README.md#deploy-to-testnet) for identity
+setup, safety notes, and the complete command.
+
 1. **Build contracts for deployment:**
    ```bash
    cd contracts
@@ -285,9 +290,11 @@ docker compose -f docker-compose.prod.yml up -d --build
 
 2. **Deploy using Stellar CLI:**
    ```bash
-   stellar contract deploy ./target/wasm32-unknown-unknown/release/stream_contract.wasm \
-     --source <your-account> \
-     --network testnet
+   stellar contract deploy \
+     --wasm target/wasm32-unknown-unknown/release/stream_contract.wasm \
+     --source-account <identity> \
+     --network testnet \
+     --alias stream_contract
    ```
 
 ## Troubleshooting
