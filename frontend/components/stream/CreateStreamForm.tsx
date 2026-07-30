@@ -71,7 +71,7 @@ export function CreateStreamForm() {
     const params = {
       recipient: formData.recipient.trim(),
       tokenAddress: formData.tokenAddress,
-      amount: parseFloat(formData.amount),
+      amount: Math.floor(parseFloat(formData.amount) * 1e7),
       duration: parseInt(formData.duration, 10),
     };
 

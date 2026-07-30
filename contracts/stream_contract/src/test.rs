@@ -19,15 +19,15 @@ fn test_create_stream() {
     let recipient = Address::generate(&env);
 
     let stellar_asset = soroban_sdk::token::StellarAssetClient::new(&env, &token_address);
-    stellar_asset.mint(&sender, &1000);
+    stellar_asset.mint(&sender, &1_000_000_000);
 
     let contract_id = env.register(StreamContract, ());
     let client = StreamContractClient::new(&env, &contract_id);
 
     let token_client = soroban_sdk::token::Client::new(&env, &token_address);
-    token_client.approve(&sender, &contract_id, &500, &1000000);
+    token_client.approve(&sender, &contract_id, &500_000_000, &1000000);
 
-    let amount: i128 = 500;
+    let amount: i128 = 500_000_000;
     let duration: u64 = 86400;
 
     let stream_id = client.create_stream(&sender, &recipient, &token_address, &amount, &duration);
@@ -56,16 +56,18 @@ fn test_create_multiple_streams() {
     let recipient2 = Address::generate(&env);
 
     let stellar_asset = soroban_sdk::token::StellarAssetClient::new(&env, &token_address);
-    stellar_asset.mint(&sender, &2000);
+    stellar_asset.mint(&sender, &2_000_000_000);
 
     let contract_id = env.register(StreamContract, ());
     let client = StreamContractClient::new(&env, &contract_id);
 
     let token_client = soroban_sdk::token::Client::new(&env, &token_address);
-    token_client.approve(&sender, &contract_id, &1000, &1000000);
+    token_client.approve(&sender, &contract_id, &1_000_000_000, &1000000);
 
-    let stream_id1 = client.create_stream(&sender, &recipient1, &token_address, &500, &86400);
-    let stream_id2 = client.create_stream(&sender, &recipient2, &token_address, &500, &86400);
+    let stream_id1 =
+        client.create_stream(&sender, &recipient1, &token_address, &500_000_000, &86400);
+    let stream_id2 =
+        client.create_stream(&sender, &recipient2, &token_address, &500_000_000, &86400);
 
     assert_eq!(stream_id1, 1);
     assert_eq!(stream_id2, 2);
@@ -82,17 +84,19 @@ fn test_create_stream_ids_do_not_collide_within_same_ledger() {
     let recipient2 = Address::generate(&env);
 
     let stellar_asset = soroban_sdk::token::StellarAssetClient::new(&env, &token_address);
-    stellar_asset.mint(&sender, &2_000);
+    stellar_asset.mint(&sender, &2_000_000_000);
 
     let contract_id = env.register(StreamContract, ());
     let client = StreamContractClient::new(&env, &contract_id);
 
     let token_client = soroban_sdk::token::Client::new(&env, &token_address);
-    token_client.approve(&sender, &contract_id, &1_000, &1_000_000);
+    token_client.approve(&sender, &contract_id, &1_000_000_000, &1_000_000);
 
     let starting_ledger_sequence = env.ledger().sequence();
-    let stream_id1 = client.create_stream(&sender, &recipient1, &token_address, &500, &86_400);
-    let stream_id2 = client.create_stream(&sender, &recipient2, &token_address, &500, &86_400);
+    let stream_id1 =
+        client.create_stream(&sender, &recipient1, &token_address, &500_000_000, &86_400);
+    let stream_id2 =
+        client.create_stream(&sender, &recipient2, &token_address, &500_000_000, &86_400);
 
     assert_eq!(env.ledger().sequence(), starting_ledger_sequence);
     assert_ne!(stream_id1, stream_id2);
@@ -125,7 +129,7 @@ fn test_top_up_stream_uses_returned_create_stream_id() {
     let top_up_amount = 5_000i128;
 
     let result = client.try_top_up_stream(&sender, &stream_id, &top_up_amount);
-    assert_eq!(result, Ok(()));
+    assert_eq!(result, Ok(Ok(())));
 
     env.as_contract(&contract_id, || {
         let storage = env.storage().persistent();
@@ -146,7 +150,7 @@ fn test_create_stream_transfers_tokens() {
     let recipient = Address::generate(&env);
 
     let stellar_asset = soroban_sdk::token::StellarAssetClient::new(&env, &token_address);
-    stellar_asset.mint(&sender, &1000);
+    stellar_asset.mint(&sender, &1_000_000_000);
 
     let contract_id = env.register(StreamContract, ());
     let client = StreamContractClient::new(&env, &contract_id);
@@ -155,9 +159,9 @@ fn test_create_stream_transfers_tokens() {
     let initial_sender_balance = token_client.balance(&sender);
     let initial_contract_balance = token_client.balance(&contract_id);
 
-    token_client.approve(&sender, &contract_id, &500, &1000000);
+    token_client.approve(&sender, &contract_id, &500_000_000, &1000000);
 
-    let amount: i128 = 500;
+    let amount: i128 = 500_000_000;
     let duration: u64 = 86400;
 
     client.create_stream(&sender, &recipient, &token_address, &amount, &duration);
@@ -199,6 +203,7 @@ fn test_top_up_stream_success() {
         recipient: recipient.clone(),
         token_address: token_address.clone(),
         rate_per_second: 100,
+        remainder: 0,
         deposited_amount: 10_000,
         withdrawn_amount: 0,
         start_time: env.ledger().timestamp(),
@@ -282,6 +287,7 @@ fn test_top_up_stream_unauthorized() {
         recipient: recipient.clone(),
         token_address: token_address.clone(),
         rate_per_second: 100,
+        remainder: 0,
         deposited_amount: 10_000,
         withdrawn_amount: 0,
         start_time: env.ledger().timestamp(),
@@ -321,6 +327,7 @@ fn test_top_up_stream_inactive() {
         recipient: recipient.clone(),
         token_address: token_address.clone(),
         rate_per_second: 100,
+        remainder: 0,
         deposited_amount: 10_000,
         withdrawn_amount: 0,
         start_time: env.ledger().timestamp(),
