@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useWallet } from "@/context/wallet-context";
 import { simulateContractQuery } from "@/lib/contract-query";
 import { useStableIdentity } from "./useStableIdentity";
@@ -26,17 +26,17 @@ export interface QueryState<T> {
  */
 export function useContractQuery<T = unknown>(options: QueryOptions): QueryState<T> {
   const { session } = useWallet();
+  const args = useStableIdentity(options.args);
+  const { contractId, method, enabled, refetchInterval } = options;
   const [data, setData] = useState<T | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const fetchDataRef = useRef<() => Promise<void>>(async () => {});
+
   // Derive a stable serialization key from args so that a functionally identical
   // array (e.g. [streamId] recreated on each render) does not change the identity
   // of fetchData and trigger the effect on every commit.
-  const argsKey = useMemo(
-    () => JSON.stringify(options.args ?? []),
-    [options.args],
-  );
 
   const fetchData = useCallback(async () => {
     if (!session || enabled === false) {
@@ -55,10 +55,14 @@ export function useContractQuery<T = unknown>(options: QueryOptions): QueryState
     } finally {
       setIsLoading(false);
     }
-  }, [session, options.contractId, options.method, argsKey, options.enabled]);
+  }, [session, contractId, method, enabled, args]);
 
   useEffect(() => {
     fetchDataRef.current = fetchData;
+  }, [fetchData]);
+
+  useEffect(() => {
+    void fetchData();
   }, [fetchData]);
 
   useEffect(() => {

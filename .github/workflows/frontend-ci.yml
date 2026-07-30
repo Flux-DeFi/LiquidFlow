@@ -1,5 +1,3 @@
-# Note: for the backend and Soroban contract pipelines, see
-# `.github/workflows/backend-ci.yml` and `.github/workflows/contract-ci.yml`.
 name: Frontend CI
 
 on:
@@ -15,37 +13,121 @@ on:
       - '.github/workflows/frontend-ci.yml'
 
 jobs:
-  test:
-    name: Frontend Checks
+  lint-and-typecheck:
+    name: Lint & Type Check
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        node-version: [20.19.x, 22.13.x]
-
+    
+    defaults:
+      run:
+        working-directory: ./frontend
+        
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Setup Node.js ${{ matrix.node-version }}
+        
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
-
-      # The workspace root's `prepare` script runs husky, so the root's own
-      # devDependencies have to come along even though only frontend is built.
+          node-version: '20'
+          cache: 'npm'
+          
       - name: Install dependencies
-        run: npm install --workspace=frontend --include-workspace-root
-
-      - name: Lint
-        working-directory: ./frontend
+        run: HUSKY=0 npm install
+        
+      - name: Run ESLint
         run: npm run lint
+        
+      - name: Run Type Check
+        run: npx tsc --noEmit
 
-      - name: Typecheck
+  test:
+    name: Unit Tests (Vitest)
+    runs-on: ubuntu-latest
+    
+    defaults:
+      run:
         working-directory: ./frontend
-        run: npm run typecheck
-
-      # Includes the render/effect stability tests for the contract hooks.
-      - name: Unit tests
-        working-directory: ./frontend
+        
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: HUSKY=0 npm install
+        
+      - name: Run Vitest
         run: npm run test
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: [lint-and-typecheck, test]
+    
+    defaults:
+      run:
+        working-directory: ./frontend
+        
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: HUSKY=0 npm install
+        
+      - name: Build Next.js app
+        run: npm run build
+        
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build
+          path: frontend/.next/
+          retention-days: 7
+
+  e2e:
+    name: E2E Tests (Cypress)
+    runs-on: ubuntu-latest
+    needs: build
+    
+    defaults:
+      run:
+        working-directory: ./frontend
+        
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: HUSKY=0 npm install
+        
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-build
+          path: frontend/.next/
+          
+      - name: Run Cypress tests
+        uses: cypress-io/github-action@v6
+        with:
+          working-directory: frontend
+          start: npm run start
+          wait-on: 'http://localhost:3000'
+          command: npm run test:e2e

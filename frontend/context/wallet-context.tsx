@@ -202,7 +202,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
       dispatch({ type: "disconnect" });
       removeStoredSession();
     }
-  }, [address, activeConnector, activeChain, state.isHydrated]);
+  }, [address, activeConnector, activeChain, state.isHydrated, state.status]);
 
   const clearError = useCallback(() => {
     dispatch({ type: "error:clear" });

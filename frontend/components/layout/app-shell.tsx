@@ -4,14 +4,10 @@ import React, { useState } from "react";
 import { Sidebar } from "./sidebar";
 import { TopNav } from "./top-nav";
 import { ConnectWalletModal } from "../ConnectWalletModal";
-import { useWallet } from "@/context/wallet-context";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
-  const { status } = useWallet();
-  const isConnected = status === "connected";
-
   return (
     <div className="flex min-h-screen bg-background text-foreground transition-colors">
       {/* Persistent Sidebar */}
