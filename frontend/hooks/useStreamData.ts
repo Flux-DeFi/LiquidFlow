@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { useContractQuery } from "./useContractQuery";
 import { useWallet } from "@/context/wallet-context";
 
@@ -23,10 +24,17 @@ export interface StreamData {
 export function useStreamData(contractId: string, streamId: string | null) {
   const { session } = useWallet();
 
+  // Memoize args array so its identity is stable across renders when streamId
+  // hasn't changed, preventing the useContractQuery effect from re-running.
+  const args = useMemo(
+    () => (streamId ? [streamId] : undefined),
+    [streamId],
+  );
+
   const { data, isLoading, error, refetch } = useContractQuery<StreamData>({
     contractId,
     method: "get_stream",
-    args: streamId ? [streamId] : undefined,
+    args,
     enabled: !!session && !!streamId,
   });
 
@@ -49,10 +57,17 @@ export function useUserStreams(
 ) {
   const { session } = useWallet();
 
+  // Memoize args array to prevent useContractQuery from re-fetching on every
+  // render when session.publicKey hasn't changed.
+  const args = useMemo(
+    () => (session ? [session.publicKey] : undefined),
+    [session?.publicKey],
+  );
+
   const { data, isLoading, error, refetch } = useContractQuery<StreamData[]>({
     contractId,
     method: type === "incoming" ? "get_incoming_streams" : "get_outgoing_streams",
-    args: session ? [session.publicKey] : undefined,
+    args,
     enabled: !!session,
     refetchInterval: options?.refetchInterval,
   });

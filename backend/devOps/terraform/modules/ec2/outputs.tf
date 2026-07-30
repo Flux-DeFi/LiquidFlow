@@ -27,3 +27,8 @@ output "target_group_arn" {
   description = "ARN of the ALB Target Group"
   value       = aws_lb_target_group.app.arn
 }
+
+output "ec2_alarms_sns_topic_arn" {
+  description = "ARN of the SNS topic used for disk/memory exhaustion alarm notifications"
+  value       = aws_sns_topic.ec2_alarms.arn
+}

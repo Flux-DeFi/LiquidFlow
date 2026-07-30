@@ -175,6 +175,27 @@ aws ssm start-session --target i-xxxxxxxxxxxx
 
 ## CI/CD Integration (GitHub Actions example)
 
+The [production rollback runbook](CI-CD.md#production-rollback-runbook) applies
+only to the separate single-host Docker/SSH deployment template. Do not run its
+Docker or nginx commands against the Terraform topology: Terraform provisions
+private Auto Scaling Group instances reached through SSM, exposes the app
+through an ALB target group on port 3001, and does not install Docker or nginx
+in its current user data.
+
+For a failure in the Terraform-managed topology, first check:
+
+- ALB target health for the environment's `target_group_arn`, including the
+  configured direct `/health` probe;
+- Auto Scaling Group instance lifecycle/refresh status and EC2 status checks;
+- the Node/PM2 service and logs through SSM Session Manager; and
+- RDS availability/events plus application database-connectivity evidence.
+
+Do not change Terraform state or restore RDS merely to compensate for an
+application release. The repository does not currently define an immutable
+application-artifact rollback for the ASG topology; use a separately reviewed
+roll-forward or launch-template/application release procedure rather than
+adapting the single-host Docker runbook during an incident.
+
 ```yaml
 - name: Terraform Plan
   run: ./devOps/scripts/deploy.sh ${{ github.ref == 'refs/heads/main' && 'prod' || 'staging' }} plan

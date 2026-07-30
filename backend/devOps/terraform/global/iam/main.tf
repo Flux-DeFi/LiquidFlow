@@ -1,3 +1,6 @@
+data "aws_caller_identity" "current" {}
+data "aws_region" "current" {}
+
 locals {
   name_prefix = "${var.project_name}-${var.environment}"
 
@@ -9,6 +12,14 @@ locals {
     },
     var.tags
   )
+
+  # CloudWatch Agent log groups written by the EC2 bootstrap script
+  # (backend/devOps/terraform/modules/ec2/user_data.sh.tpl) — kept in sync
+  # with the hardcoded `log_group_name` values in that template.
+  cloudwatch_log_group_arns = [
+    "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:/liquidflow/${var.environment}/app:*",
+    "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:log-group:/liquidflow/${var.environment}/user-data:*",
+  ]
 }
 
 # EC2 INSTANCE ROLE
@@ -30,16 +41,129 @@ resource "aws_iam_role" "ec2" {
   tags = local.common_tags
 }
 
-# SSM Session Manager — secure remote access without opening SSH ports
-resource "aws_iam_role_policy_attachment" "ssm" {
-  role       = aws_iam_role.ec2.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+# ─── SSM SESSION MANAGER (secure remote access without opening SSH ports) ─────
+# Replaces the AWS-managed `AmazonSSMManagedInstanceCore` policy — that managed
+# policy also grants Patch Manager / Inventory / State Manager / KMS decrypt
+# permissions we don't use. This custom policy keeps only what the SSM Agent
+# needs to register the instance and support Session Manager connections.
+resource "aws_iam_policy" "ssm_session_manager" {
+  name        = "${local.name_prefix}-ec2-ssm-session-manager"
+  description = "Minimal SSM Agent + Session Manager permissions for ${local.name_prefix} EC2 instances"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "SSMAgentRegistration"
+        Effect = "Allow"
+        Action = [
+          "ssm:UpdateInstanceInformation",
+          "ssm:ListAssociations",
+          "ssm:ListInstanceAssociations",
+          "ssm:DescribeAssociation",
+          "ssm:GetDeployablePatchSnapshotForInstance",
+          "ssm:GetDocument",
+          "ssm:DescribeDocument",
+          "ssm:GetManifest",
+          "ssm:UpdateInstanceAssociationStatus",
+          "ssm:UpdateAssociationStatus",
+          "ssm:PutInventory",
+        ]
+        # These SSM Agent registration/heartbeat calls are not scopable to a
+        # resource ARN — SSM does not support resource-level permissions for
+        # them (see AWS docs for AmazonSSMManagedInstanceCore). Action is
+        # already narrowed to only what agent registration requires; the
+        # unused Patch Manager / State Manager write actions from the
+        # original managed policy have been dropped.
+        Resource = "*"
+      },
+      {
+        Sid    = "SessionManagerChannel"
+        Effect = "Allow"
+        Action = [
+          "ssmmessages:CreateControlChannel",
+          "ssmmessages:CreateDataChannel",
+          "ssmmessages:OpenControlChannel",
+          "ssmmessages:OpenDataChannel",
+        ]
+        # ssmmessages:* has no resource-level permissions — required "*" by AWS.
+        Resource = "*"
+      },
+      {
+        Sid    = "EC2MessagesChannel"
+        Effect = "Allow"
+        Action = [
+          "ec2messages:AcknowledgeMessage",
+          "ec2messages:DeleteMessage",
+          "ec2messages:FailMessage",
+          "ec2messages:GetEndpoint",
+          "ec2messages:GetMessages",
+          "ec2messages:SendReply",
+        ]
+        # ec2messages:* has no resource-level permissions — required "*" by AWS.
+        Resource = "*"
+      }
+    ]
+  })
+
+  tags = local.common_tags
 }
 
-# CloudWatch Agent — push metrics and logs
+resource "aws_iam_role_policy_attachment" "ssm_session_manager" {
+  role       = aws_iam_role.ec2.name
+  policy_arn = aws_iam_policy.ssm_session_manager.arn
+}
+
+# ─── CLOUDWATCH AGENT (push metrics + app/bootstrap logs) ─────────────────────
+# Replaces the AWS-managed `CloudWatchAgentServerPolicy` — that managed policy
+# grants logs/metrics access to ALL log groups and namespaces in the account.
+# This custom policy scopes log actions to only the two log groups this
+# instance's CloudWatch Agent config actually writes to (see
+# modules/ec2/user_data.sh.tpl), and namespaces the metric writes.
+resource "aws_iam_policy" "cloudwatch_agent" {
+  name        = "${local.name_prefix}-ec2-cloudwatch-agent"
+  description = "Scoped CloudWatch Agent metrics + logs permissions for ${local.name_prefix} EC2 instances"
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "PutMetrics"
+        Effect = "Allow"
+        Action = ["cloudwatch:PutMetricData"]
+        # cloudwatch:PutMetricData has no resource-level permissions — AWS
+        # requires "*" here. Blast radius is limited via the condition below
+        # to only the LiquidFlow/<environment> namespace this agent uses.
+        Resource = "*"
+        Condition = {
+          StringEquals = {
+            "cloudwatch:namespace" = "LiquidFlow/${var.environment}"
+          }
+        }
+      },
+      {
+        Sid    = "WriteAppLogs"
+        Effect = "Allow"
+        Action = [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents",
+          "logs:DescribeLogGroups",
+          "logs:DescribeLogStreams"
+        ]
+        # Scoped to only the two log groups this instance's CloudWatch Agent
+        # config writes to — not "*".
+        Resource = local.cloudwatch_log_group_arns
+      }
+    ]
+  })
+
+  tags = local.common_tags
+}
+
 resource "aws_iam_role_policy_attachment" "cloudwatch_agent" {
   role       = aws_iam_role.ec2.name
-  policy_arn = "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"
+  policy_arn = aws_iam_policy.cloudwatch_agent.arn
 }
 
 # S3 ACCESS (scoped to project buckets only)
@@ -52,9 +176,9 @@ resource "aws_iam_policy" "s3_access" {
     Version = "2012-10-17"
     Statement = [
       {
-        Sid    = "AllowObjectOperations"
-        Effect = "Allow"
-        Action = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"]
+        Sid      = "AllowObjectOperations"
+        Effect   = "Allow"
+        Action   = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"]
         Resource = [for arn in var.s3_bucket_arns : "${arn}/*"]
       },
       {
