@@ -1,0 +1,51 @@
+# Note: for the backend and Soroban contract pipelines, see
+# `.github/workflows/backend-ci.yml` and `.github/workflows/contract-ci.yml`.
+name: Frontend CI
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/frontend-ci.yml'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/frontend-ci.yml'
+
+jobs:
+  test:
+    name: Frontend Checks
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [20.19.x, 22.13.x]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      # The workspace root's `prepare` script runs husky, so the root's own
+      # devDependencies have to come along even though only frontend is built.
+      - name: Install dependencies
+        run: npm install --workspace=frontend --include-workspace-root
+
+      - name: Lint
+        working-directory: ./frontend
+        run: npm run lint
+
+      - name: Typecheck
+        working-directory: ./frontend
+        run: npm run typecheck
+
+      # Includes the render/effect stability tests for the contract hooks.
+      - name: Unit tests
+        working-directory: ./frontend
+        run: npm run test

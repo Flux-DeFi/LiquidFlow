@@ -17,6 +17,9 @@ export interface StreamData {
   isActive: boolean;
 }
 
+// Shared empty result so consumers never see a new array identity per render.
+const NO_STREAMS: StreamData[] = [];
+
 /**
  * Hook for fetching stream data from the contract
  * Automatically refetches when stream ID or contract changes
@@ -56,6 +59,9 @@ export function useUserStreams(
   options?: { refetchInterval?: number }
 ) {
   const { session } = useWallet();
+  const publicKey = session?.publicKey ?? null;
+
+  const args = useMemo(() => (publicKey ? [publicKey] : undefined), [publicKey]);
 
   // Memoize args array to prevent useContractQuery from re-fetching on every
   // render when session.publicKey hasn't changed.
@@ -72,8 +78,10 @@ export function useUserStreams(
     refetchInterval: options?.refetchInterval,
   });
 
+  const streams = useMemo(() => data ?? NO_STREAMS, [data]);
+
   return {
-    streams: data || [],
+    streams,
     isLoading,
     error,
     refetch,

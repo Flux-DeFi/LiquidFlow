@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useWallet } from "@/context/wallet-context";
+import { simulateContractQuery } from "@/lib/contract-query";
+import { useStableIdentity } from "./useStableIdentity";
 
 export interface QueryOptions {
   contractId: string;
@@ -37,7 +39,7 @@ export function useContractQuery<T = unknown>(options: QueryOptions): QueryState
   );
 
   const fetchData = useCallback(async () => {
-    if (!session || options.enabled === false) {
+    if (!session || enabled === false) {
       return;
     }
 
@@ -45,18 +47,8 @@ export function useContractQuery<T = unknown>(options: QueryOptions): QueryState
     setError(null);
 
     try {
-      // TODO: Implement actual contract query using stellar-sdk
-      // This should simulate the contract call without submitting a transaction
-      console.log("Querying contract:", {
-        contract: options.contractId,
-        method: options.method,
-        args: options.args,
-      });
-
-      // Mock data for now
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      const mockData = { success: true, result: null } as T;
-      setData(mockData);
+      const result = await simulateContractQuery<T>({ contractId, method, args });
+      setData(result);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Query failed";
       setError(errorMessage);
@@ -66,13 +58,20 @@ export function useContractQuery<T = unknown>(options: QueryOptions): QueryState
   }, [session, options.contractId, options.method, argsKey, options.enabled]);
 
   useEffect(() => {
-    fetchData();
+    fetchDataRef.current = fetchData;
+  }, [fetchData]);
 
-    if (options.refetchInterval && options.refetchInterval > 0) {
-      const interval = setInterval(fetchData, options.refetchInterval);
-      return () => clearInterval(interval);
+  useEffect(() => {
+    if (!session || enabled === false || !refetchInterval || refetchInterval <= 0) {
+      return;
     }
-  }, [fetchData, options.refetchInterval]);
+
+    const interval = setInterval(() => {
+      void fetchDataRef.current();
+    }, refetchInterval);
+
+    return () => clearInterval(interval);
+  }, [session, enabled, refetchInterval]);
 
   return {
     data,

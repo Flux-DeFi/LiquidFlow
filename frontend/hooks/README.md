@@ -45,6 +45,11 @@ const { data, isLoading, error, refetch } = useContractQuery({
 });
 ```
 
+`args` is keyed by its serialized value rather than by array identity, so passing
+a fresh array literal on every render does not retrigger the query. The fetcher
+returned as `refetch` keeps a stable identity for unchanged inputs, and a
+`refetchInterval` timer is created once instead of being rebuilt per render.
+
 #### `useContractCall`
 Invoke contract methods that modify state.
 

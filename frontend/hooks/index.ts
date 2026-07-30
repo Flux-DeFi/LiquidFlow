@@ -6,6 +6,7 @@ export { useStreamOperations } from "./useStreamOperations";
 export { useStreamData, useUserStreams } from "./useStreamData";
 export { useContractEvents, useStreamEvents } from "./useContractEvents";
 export { useWalletBalance, useAllBalances } from "./useWalletBalance";
+export { useStableIdentity, stableKey } from "./useStableIdentity";
 
 // Type exports
 export type { QueryOptions, QueryState } from "./useContractQuery";
