@@ -61,13 +61,11 @@ export function useUserStreams(
   const { session } = useWallet();
   const publicKey = session?.publicKey ?? null;
 
-  const args = useMemo(() => (publicKey ? [publicKey] : undefined), [publicKey]);
-
   // Memoize args array to prevent useContractQuery from re-fetching on every
   // render when session.publicKey hasn't changed.
   const args = useMemo(
-    () => (session ? [session.publicKey] : undefined),
-    [session],
+    () => (publicKey ? [publicKey] : undefined),
+    [publicKey],
   );
 
   const { data, isLoading, error, refetch } = useContractQuery<StreamData[]>({
