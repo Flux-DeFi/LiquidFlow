@@ -4,7 +4,6 @@ import React from "react";
 
 import "./globals.css";
 import { WalletProvider } from "@/context/wallet-context";
-import Link from "next/link";
 import { ThemeProvider } from "@/context/theme-provider";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ToastProvider } from "@/components/ToastProvider";

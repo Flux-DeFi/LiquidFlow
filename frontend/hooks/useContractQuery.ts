@@ -63,7 +63,7 @@ export function useContractQuery<T = unknown>(options: QueryOptions): QueryState
     } finally {
       setIsLoading(false);
     }
-  }, [session, options.contractId, options.method, argsKey, options.enabled]);
+  }, [session, options.contractId, options.method, options.enabled, options.args]);
 
   useEffect(() => {
     fetchData();

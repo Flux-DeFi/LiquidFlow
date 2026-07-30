@@ -61,7 +61,7 @@ export function useUserStreams(
   // render when session.publicKey hasn't changed.
   const args = useMemo(
     () => (session ? [session.publicKey] : undefined),
-    [session?.publicKey],
+    [session],
   );
 
   const { data, isLoading, error, refetch } = useContractQuery<StreamData[]>({

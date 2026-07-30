@@ -62,7 +62,7 @@ export function useContractEvents(filter: EventFilter) {
       }
       setIsListening(false);
     };
-  }, [session, filterKey]);
+  }, [session, filterKey, filter]);
 
   const stopListening = useCallback(() => {
     if (intervalRef.current) {
