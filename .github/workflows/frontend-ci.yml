@@ -28,10 +28,11 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20.19.x'
+          node-version: '20'
+          cache: 'npm'
           
       - name: Install dependencies
-        run: npm install
+        run: npm install --ignore-scripts
         
       - name: Run ESLint
         run: npm run lint
@@ -54,10 +55,11 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20.19.x'
+          node-version: '20'
+          cache: 'npm'
           
       - name: Install dependencies
-        run: npm install
+        run: npm install --ignore-scripts
         
       - name: Run Vitest
         run: npm run test
@@ -78,10 +80,11 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20.19.x'
+          node-version: '20'
+          cache: 'npm'
           
       - name: Install dependencies
-        run: npm install
+        run: npm install --ignore-scripts
         
       - name: Build Next.js app
         run: npm run build
@@ -109,10 +112,11 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20.19.x'
+          node-version: '20'
+          cache: 'npm'
           
       - name: Install dependencies
-        run: npm install
+        run: npm install --ignore-scripts
         
       - name: Download build artifact
         uses: actions/download-artifact@v4
