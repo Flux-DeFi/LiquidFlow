@@ -9,6 +9,15 @@
 #   DOCKER_HUB_USER   → usuario Docker Hub (o GHCR username)
 #   DOCKER_HUB_TOKEN  → access token Docker Hub
 #   APP_ENV_FILE      → contenido completo del .env de producción
+#
+# NOTE on AWS IAM: this workflow does not assume an AWS IAM role or call any
+# AWS API itself — it only deploys over SSH and pulls images from Docker Hub.
+# The AWS permissions the deployed application depends on at runtime (S3,
+# Secrets Manager, CloudWatch Agent, SSM Session Manager) are the EC2 instance
+# role defined in backend/devOps/terraform/global/iam/main.tf, attached via
+# the instance profile referenced by the launch template
+# (backend/devOps/terraform/modules/ec2/main.tf). See that module for the
+# least-privilege scoping of those grants (issue #200).
 name: CD - Deploy to EC2
 
 on:
