@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useRef } from "react";
 import {
   X,
   ExternalLink,
@@ -148,6 +148,11 @@ function WalletCard({
   );
 }
 
+// ─── Focusable element selector ────────────────────────────────────────────────
+
+const FOCUSABLE_SELECTOR =
+  'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
 // ─── Main Modal ────────────────────────────────────────────────────────────────
 
 interface ConnectWalletModalProps {
@@ -174,18 +179,76 @@ export function ConnectWalletModal({
   const isConnected = status === "connected";
   const hasError = status === "error";
 
-  // Close on Escape key
+  // Refs for focus management
+  const modalRef = useRef<HTMLDivElement>(null);
+  const previousActiveElement = useRef<Element | null>(null);
+
+  // Focus trap and Escape key handling
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !isConnecting) onClose();
+      if (e.key === "Escape" && !isConnecting) {
+        onClose();
+        return;
+      }
+
+      // Tab / Shift+Tab — trap focus within the modal
+      if (e.key === "Tab" && modalRef.current) {
+        const focusableElements = modalRef.current.querySelectorAll(
+          FOCUSABLE_SELECTOR,
+        );
+        if (focusableElements.length === 0) return;
+
+        const first = focusableElements[0] as HTMLElement;
+        const last = focusableElements[
+          focusableElements.length - 1
+        ] as HTMLElement;
+
+        if (e.shiftKey) {
+          if (document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+          }
+        } else {
+          if (document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+          }
+        }
+      }
     },
     [isConnecting, onClose],
   );
 
   useEffect(() => {
     if (!isOpen) return;
+
+    // Save the element that had focus before the modal opened
+    previousActiveElement.current = document.activeElement;
+
+    // Focus the first focusable element inside the modal
+    requestAnimationFrame(() => {
+      if (modalRef.current) {
+        const focusable = modalRef.current.querySelectorAll(
+          FOCUSABLE_SELECTOR,
+        );
+        if (focusable.length > 0) {
+          (focusable[0] as HTMLElement).focus();
+        }
+      }
+    });
+
     document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+
+      // Restore focus to the trigger element when the modal closes
+      if (
+        previousActiveElement.current &&
+        previousActiveElement.current instanceof HTMLElement
+      ) {
+        previousActiveElement.current.focus();
+      }
+    };
   }, [isOpen, handleKeyDown]);
 
   // Auto-close after successful connection
@@ -219,6 +282,7 @@ export function ConnectWalletModal({
 
       {/* Modal */}
       <div
+        ref={modalRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="wallet-modal-title"
