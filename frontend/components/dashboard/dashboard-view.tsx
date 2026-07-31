@@ -1,5 +1,6 @@
 "use client";
 import React from "react";
+import Link from "next/link";
 
 import {
   getMockDashboardStats,
@@ -94,6 +95,30 @@ function renderStreams(
   snapshot: DashboardSnapshot,
   onTopUp: (id: string) => void,
 ) {
+  if (snapshot.streams.length === 0) {
+    return (
+      <section className="dashboard-panel">
+        <div className="dashboard-panel__header">
+          <h3>My Active Streams</h3>
+          <span>0 total</span>
+        </div>
+        <div className="dashboard-empty-state mt-4">
+          <h2>No streams yet</h2>
+          <p>
+            You haven&apos;t created or received any streams yet. Create your
+            first payment stream to get started.
+          </p>
+          <Link
+            href="/create-stream"
+            className="primary-button inline-flex items-center gap-2 mt-4"
+          >
+            Create Your First Stream
+          </Link>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section className="dashboard-panel">
       <div className="dashboard-panel__header">

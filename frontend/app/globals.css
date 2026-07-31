@@ -389,6 +389,27 @@ body {
   background: rgba(255, 255, 255, 0.95);
 }
 
+.primary-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: none;
+  border-radius: 0.72rem;
+  height: 2.5rem;
+  padding: 0 1.25rem;
+  background: var(--accent);
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s ease;
+}
+
+.primary-button:hover {
+  background: var(--accent-hover);
+}
+
 .loading-pulse {
   width: 2.05rem;
   height: 2.05rem;
