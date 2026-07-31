@@ -6,8 +6,13 @@ import {
   type DashboardSnapshot,
 } from "@/lib/dashboard";
 import { shortenPublicKey, type WalletSession } from "@/lib/wallet";
+import { useUserStreams } from "@/hooks/useStreamData";
 import IncomingStreams from "../IncomingStreams";
 import { TransactionHistoryTable } from "./TransactionHistoryTable";
+
+/** Shared mock contract ID — mirrors the value in CreateStreamForm. */
+const MOCK_CONTRACT_ID =
+  "CA4CJE3MOWW5Q3J4W6DXLX4JRUBGMY4KTJ2FWQ2SPNB2B7IXWNFQR3C7";
 
 interface DashboardViewProps {
   session: WalletSession;
@@ -182,6 +187,83 @@ function renderRecentActivity(snapshot: DashboardSnapshot) {
   );
 }
 
+/**
+ * Displays the current loading / error / data state of the stream-data hook.
+ *
+ * Demonstrates explicit handling of the three states returned by useUserStreams
+ * so that consumers can tell "still loading" apart from "failed to load" apart
+ * from "loaded but empty" (Closes #182).
+ */
+function StreamDataOverview() {
+  const { streams, isLoading, error } = useUserStreams(
+    MOCK_CONTRACT_ID,
+    "outgoing",
+  );
+
+  /* ── loading ── */
+  if (isLoading) {
+    return (
+      <section className="dashboard-panel" aria-busy="true">
+        <div className="dashboard-panel__header">
+          <h3>Stream Data</h3>
+        </div>
+        <div className="flex flex-col gap-3 p-4">
+          <div className="h-4 w-3/4 animate-pulse rounded bg-slate-200" />
+          <div className="h-4 w-1/2 animate-pulse rounded bg-slate-200" />
+          <div className="h-4 w-2/3 animate-pulse rounded bg-slate-200" />
+        </div>
+      </section>
+    );
+  }
+
+  /* ── error ── */
+  if (error) {
+    return (
+      <section className="dashboard-panel">
+        <div className="dashboard-panel__header">
+          <h3>Stream Data</h3>
+        </div>
+        <div className="rounded border border-red-200 bg-red-50 p-4 text-red-800">
+          <p className="font-semibold">Failed to load stream data</p>
+          <p className="mt-1 text-sm">{error}</p>
+        </div>
+      </section>
+    );
+  }
+
+  /* ── loaded but empty ── */
+  if (streams.length === 0) {
+    return (
+      <section className="dashboard-panel">
+        <div className="dashboard-panel__header">
+          <h3>Stream Data</h3>
+        </div>
+        <div className="mini-empty-state">
+          <p>No outgoing streams found.</p>
+        </div>
+      </section>
+    );
+  }
+
+  /* ── data ── */
+  return (
+    <section className="dashboard-panel">
+      <div className="dashboard-panel__header">
+        <h3>Stream Data</h3>
+        <span>{streams.length} outgoing</span>
+      </div>
+      <ul className="divide-y">
+        {streams.slice(0, 5).map((s) => (
+          <li key={s.id} className="flex items-center justify-between py-2 text-sm">
+            <code className="truncate text-xs">{s.recipient}</code>
+            <span>{s.depositedAmount} — {s.isActive ? "Active" : "Inactive"}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 export function DashboardView({ session, onDisconnect }: DashboardViewProps) {
   const [activeTab, setActiveTab] = React.useState("overview");
   const stats = getMockDashboardStats(session.walletId);
@@ -236,6 +318,7 @@ export function DashboardView({ session, onDisconnect }: DashboardViewProps) {
         return (
             <div className="dashboard-content-stack mt-8">
               {renderStats(stats)}
+              <StreamDataOverview />
               {renderStreams(stats, handleTopUp)}
               {renderRecentActivity(stats)}
             </div>
