@@ -64,6 +64,31 @@ await invoke({
 });
 ```
 
+## Error Handling Convention
+
+Hooks expose recoverable failures through an `error` message field instead of
+throwing during render. Most hooks return `string | null`; transaction state may
+leave the field `undefined` until a failure exists. Consumers should treat
+`error` as the shared display and logging surface for recoverable hook failures:
+
+- Render the message near the action or data view that failed.
+- Keep the previous successful `data`, `stream`, `streams`, `balance`, or
+  `events` value on screen unless the hook explicitly returns an empty value.
+- Offer a retry action when the hook exposes `refetch`, or let the user repeat
+  the failed transaction/call action.
+- Avoid parsing error text for control flow. If a component needs typed failure
+  handling, add that shape to the hook contract first.
+- Do not duplicate low-level `try/catch` UI handling around every component.
+  Let the hook set `error`, then render one consistent message state.
+
+The same pattern applies to `useContractQuery`, `useContractCall`,
+`useSorobanTransaction`, `useStreamOperations`, `useStreamData`,
+`useUserStreams`, `useWalletBalance`, `useAllBalances`, `useContractEvents`,
+and `useStreamEvents`.
+
+See `frontend/hooks/examples.tsx` for a small reusable `HookErrorMessage`
+component and examples of pairing an error message with retry or user action.
+
 ### Stream-Specific Hooks
 
 #### `useStreamOperations`

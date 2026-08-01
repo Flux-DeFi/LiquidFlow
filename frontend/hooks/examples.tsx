@@ -14,6 +14,27 @@ import {
   useContractEvents,
 } from "@/hooks";
 
+function HookErrorMessage({
+  error,
+  onRetry,
+}: {
+  error?: string | null;
+  onRetry?: () => void;
+}) {
+  if (!error) return null;
+
+  return (
+    <div role="alert" style={{ color: "red" }}>
+      <p>{error}</p>
+      {onRetry && (
+        <button type="button" onClick={onRetry}>
+          Try again
+        </button>
+      )}
+    </div>
+  );
+}
+
 // Example 1: Create a new payment stream
 export function CreateStreamExample() {
   const [recipient, setRecipient] = useState("");
@@ -54,7 +75,7 @@ export function CreateStreamExample() {
       <button type="submit" disabled={isLoading}>
         {isLoading ? "Creating..." : "Create Stream"}
       </button>
-      {error && <p style={{ color: "red" }}>{error}</p>}
+      <HookErrorMessage error={error} />
     </form>
   );
 }
@@ -68,12 +89,12 @@ export function OutgoingStreamsExample() {
   );
 
   if (isLoading) return <div>Loading streams...</div>;
-  if (error) return <div>Error: {error}</div>;
 
   return (
     <div>
       <h2>My Outgoing Streams</h2>
       <button onClick={refetch}>Refresh</button>
+      <HookErrorMessage error={error} onRetry={refetch} />
       <ul>
         {streams.map((stream) => (
           <li key={stream.id}>
@@ -98,7 +119,7 @@ export function StreamDetailExample({ streamId }: { streamId: string }) {
   };
 
   if (isLoading) return <div>Loading stream...</div>;
-  if (error) return <div>Error: {error}</div>;
+  if (error) return <HookErrorMessage error={error} />;
   if (!stream) return <div>Stream not found</div>;
 
   const availableToWithdraw = stream.depositedAmount - stream.withdrawnAmount;
@@ -124,7 +145,7 @@ export function WalletBalanceExample() {
   const { balance, isLoading, error } = useWalletBalance("CUSDC_TOKEN_ADDRESS", 5000);
 
   if (isLoading) return <div>Loading balance...</div>;
-  if (error) return <div>Error: {error}</div>;
+  if (error) return <HookErrorMessage error={error} />;
 
   return (
     <div>
@@ -166,7 +187,7 @@ export function TopUpStreamExample({ streamId }: { streamId: string }) {
       <button type="submit" disabled={isLoading}>
         {isLoading ? "Processing..." : "Top Up"}
       </button>
-      {error && <p style={{ color: "red" }}>{error}</p>}
+      <HookErrorMessage error={error} />
     </form>
   );
 }
@@ -190,7 +211,7 @@ export function CancelStreamExample({ streamId }: { streamId: string }) {
       <button onClick={handleCancel} disabled={isLoading} style={{ color: "red" }}>
         {isLoading ? "Cancelling..." : "Cancel Stream"}
       </button>
-      {error && <p style={{ color: "red" }}>{error}</p>}
+      <HookErrorMessage error={error} />
     </div>
   );
 }
