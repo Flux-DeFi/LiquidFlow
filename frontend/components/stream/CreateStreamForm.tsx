@@ -23,6 +23,7 @@ interface FormData {
 
 interface FormErrors {
   recipient?: string;
+  token?: string;
   amount?: string;
   duration?: string;
 }
@@ -38,33 +39,53 @@ export function CreateStreamForm() {
   });
   const [formErrors, setFormErrors] = useState<FormErrors>({});
   const [streamId, setStreamId] = useState<string | null>(null);
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
 
-  const validate = (): boolean => {
+  const validate = (data: FormData = formData): FormErrors => {
     const errors: FormErrors = {};
 
-    if (!formData.recipient.trim()) {
+    if (!data.tokenAddress) {
+      errors.token = "Please select a token.";
+    }
+
+    if (!data.recipient.trim()) {
       errors.recipient = "Recipient address is required.";
-    } else if (!formData.recipient.startsWith("G") || formData.recipient.length < 30) {
+    } else if (!data.recipient.startsWith("G") || data.recipient.length < 30) {
       errors.recipient = "Enter a valid Stellar public key (starts with G).";
     }
 
-    const amount = parseFloat(formData.amount);
-    if (!formData.amount || isNaN(amount) || amount <= 0) {
+    const amount = parseFloat(data.amount);
+    if (!data.amount || isNaN(amount) || amount <= 0) {
       errors.amount = "Enter a valid positive amount.";
+    } else if (amount > 1_000_000_000) {
+      errors.amount = "Amount seems too high. Please verify.";
     }
 
-    const duration = parseInt(formData.duration, 10);
-    if (!formData.duration || isNaN(duration) || duration <= 0) {
+    const duration = parseInt(data.duration, 10);
+    if (!data.duration || isNaN(duration) || duration <= 0) {
       errors.duration = "Enter a valid duration in seconds.";
+    } else if (duration < 60) {
+      errors.duration = "Minimum duration is 60 seconds.";
+    } else if (duration > 365 * 24 * 3600) {
+      errors.duration = "Duration cannot exceed 1 year.";
     }
 
+    return errors;
+  };
+
+  const isFormValid = (): boolean => {
+    return Object.keys(validate()).length === 0;
+  };
+
+  const validateAndSet = (): boolean => {
+    const errors = validate();
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validate()) return;
+    if (!validateAndSet()) return;
 
     setStreamId(null);
 
@@ -82,6 +103,7 @@ export function CreateStreamForm() {
 
   const updateField = (field: keyof FormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+    setTouched((prev) => ({ ...prev, [field]: true }));
     if (formErrors[field as keyof FormErrors]) {
       setFormErrors((prev) => {
         const next = { ...prev };
@@ -178,6 +200,9 @@ export function CreateStreamForm() {
               </option>
             ))}
           </select>
+          {formErrors.token && touched.token && (
+            <p className="mt-1 text-xs text-red-400">{formErrors.token}</p>
+          )}
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -231,7 +256,7 @@ export function CreateStreamForm() {
 
       <button
         type="submit"
-        disabled={isLoading || !!streamId}
+        disabled={isLoading || !!streamId || !isFormValid()}
         className="w-full inline-flex items-center justify-center gap-2 h-12 rounded-xl bg-accent text-background font-semibold text-sm shadow-[0_0_20px_rgba(16,185,129,0.4)] hover:shadow-[0_0_30px_rgba(16,185,129,0.6)] transition-all disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
         data-testid="btn-create-stream"
       >
