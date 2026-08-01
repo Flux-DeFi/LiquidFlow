@@ -69,3 +69,17 @@ describe("escapeCsvCell quoting behavior is preserved", () => {
         expect(exportSingleCell("line1\nline2")).toBe('"line1\nline2"');
     });
 });
+
+describe("convertArrayToCSV empty / null / undefined input", () => {
+    it("returns empty string for null input", () => {
+        expect(convertArrayToCSV(null)).toBe("");
+    });
+
+    it("returns empty string for undefined input", () => {
+        expect(convertArrayToCSV(undefined)).toBe("");
+    });
+
+    it("returns empty string for empty array", () => {
+        expect(convertArrayToCSV([])).toBe("");
+    });
+});

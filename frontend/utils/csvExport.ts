@@ -41,7 +41,7 @@ export const convertArrayToCSV = <T extends CsvRow>(
     ].join('\n');
 };
 
-export const downloadCSV = <T extends CsvRow>(data: T[], filename: string) => {
+export const downloadCSV = <T extends CsvRow>(data: T[], filename: string): boolean => {
     const csvData = convertArrayToCSV(data);
     const blob = new Blob([csvData], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
@@ -53,5 +53,8 @@ export const downloadCSV = <T extends CsvRow>(data: T[], filename: string) => {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        return true;
     }
+    return false;
 };

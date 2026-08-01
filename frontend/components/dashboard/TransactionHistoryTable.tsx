@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
+import toast from "react-hot-toast";
 import type { Transaction, TransactionType, TransactionStatus } from "@/lib/dashboard";
 import { downloadCSV } from "@/utils/csvExport";
 
@@ -70,17 +71,32 @@ export function TransactionHistoryTable({
   }
 
   function handleExport() {
-    const rows = filtered.map((tx) => ({
-      Date: formatTimestamp(tx.timestamp),
-      Type: TYPE_LABELS[tx.type],
-      Stream: tx.streamId,
-      Counterparty: tx.counterparty,
-      Amount: tx.amount,
-      Token: tx.token,
-      "Tx Hash": tx.txHash,
-      Status: STATUS_LABELS[tx.status],
-    }));
-    downloadCSV(rows, "flowfi-transaction-history.csv");
+    try {
+      const rows = filtered.map((tx) => ({
+        Date: formatTimestamp(tx.timestamp),
+        Type: TYPE_LABELS[tx.type],
+        Stream: tx.streamId,
+        Counterparty: tx.counterparty,
+        Amount: tx.amount,
+        Token: tx.token,
+        "Tx Hash": tx.txHash,
+        Status: STATUS_LABELS[tx.status],
+      }));
+      const success = downloadCSV(rows, "flowfi-transaction-history.csv");
+      if (success) {
+        toast.success(
+          `Exported ${rows.length} transaction${rows.length !== 1 ? "s" : ""} to CSV`
+        );
+      } else {
+        toast.error(
+          "CSV download failed — your browser may not support file downloads from this page."
+        );
+      }
+    } catch (err) {
+      toast.error(
+        `Failed to export CSV: ${err instanceof Error ? err.message : "Unknown error"}`
+      );
+    }
   }
 
   return (
