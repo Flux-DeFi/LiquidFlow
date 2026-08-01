@@ -197,26 +197,6 @@ export function StreamDashboard() {
 }
 ```
 
-## Implementation Status
-
-⚠️ **Current Status**: These hooks provide the interface and state management layer. The actual Stellar SDK integration is marked with TODO comments and needs to be implemented:
-
-1. Install `@stellar/stellar-sdk` package
-2. Implement transaction building in `useSorobanTransaction`
-3. Integrate Freighter API for transaction signing
-4. Implement Horizon API calls for queries and balance fetching
-5. Set up event streaming/polling
-
-## Next Steps
-
-1. Add Stellar SDK dependency: `npm install @stellar/stellar-sdk`
-2. Configure network settings (Testnet/Mainnet)
-3. Implement transaction builders for each contract method
-4. Add proper error handling and retry logic
-5. Implement event polling or WebSocket connections
-6. Add transaction simulation before submission
-7. Implement proper caching and state management
-
 ## Architecture
 
 These hooks follow a layered architecture:
@@ -236,3 +216,87 @@ This design allows for:
 - Gradual implementation of features
 - Flexibility to swap underlying implementations
 - Type-safe interfaces throughout
+
+## Error Handling Convention
+
+All hooks in this module follow a consistent error-handling pattern so that consumers can handle failures uniformly, regardless of which hook produced the error.
+
+### Common Error Shape
+
+Every hook returns an `error` field with the shape `string | null`:
+
+- **`null`** — no error; the last operation succeeded or hasn't run yet.
+- **`string`** — a human-readable error message describing what went wrong.
+
+| Hook | Error field type | Notes |
+|:---|:---|:---|
+| `useSorobanTransaction` | `error?: string` | Error is `undefined` when `status === "idle"` or `"success"` |
+| `useContractCall` | `error: string \| null` | Delegates to `useSorobanTransaction` |
+| `useContractQuery` | `error: string \| null` | Catches errors from `simulateContractQuery` |
+| `useWalletBalance` | `error: string \| null` | Catches errors from balance fetch |
+| `useAllBalances` | `error: string \| null` | Catches errors from multi-balance fetch |
+| `useStreamOperations` | `error: string \| null` | Delegates to `useContractCall` |
+| `useStreamData` | `error: string \| null` | Delegates to `useContractQuery` |
+| `useUserStreams` | `error: string \| null` | Delegates to `useContractQuery` |
+
+### Error Message Origin
+
+Error messages are produced by the same pattern throughout:
+
+```typescript
+catch (err) {
+  const errorMessage = err instanceof Error ? err.message : "Fallback message";
+  setError(errorMessage);
+}
+```
+
+This means:
+- If the thrown value is an `Error` instance, its `.message` is used.
+- Otherwise a static fallback string is used (e.g. `"Query failed"`, `"Transaction failed"`, `"Failed to fetch balance"`).
+- Error messages are **never structured objects** — they are always plain strings.
+
+### Consumer Guidelines
+
+When consuming a hook, always render the error state:
+
+```tsx
+const { data, isLoading, error } = useContractQuery({ ... });
+
+if (isLoading) return <LoadingSpinner />;
+if (error) return <ErrorMessage message={error} />;
+// render data ...
+```
+
+The `examples.tsx` file in this directory shows concrete usage for every hook, including
+error rendering (see `CreateStreamExample`, `OutgoingStreamsExample`, and others).
+
+### Clearing Errors
+
+- **Data hooks** (`useContractQuery`, `useWalletBalance`, `useAllBalances`): errors are cleared automatically when the next fetch starts (`setError(null)` in the fetch callback).
+- **Transaction hooks** (`useSorobanTransaction`, `useContractCall`): call the `reset()` function returned by `useSorobanTransaction` to clear the error state. `useContractCall` does not expose `reset` directly — consumers should reset at the lower level if needed.
+- **`useStreamOperations`**: errors are inherited from `useContractCall` and are cleared on the next `invoke` call.
+
+### Loading State Convention
+
+All hooks expose `isLoading: boolean` that is `true` while an async operation is in flight.
+The `examples.tsx` file demonstrates the standard loading → error → data rendering pattern.
+
+## Implementation Status
+
+⚠️ **Current Status**: These hooks provide the interface and state management layer. The actual Stellar SDK integration is marked with TODO comments and needs to be implemented:
+
+1. Install `@stellar/stellar-sdk` package
+2. Implement transaction building in `useSorobanTransaction`
+3. Integrate Freighter API for transaction signing
+4. Implement Horizon API calls for queries and balance fetching
+5. Set up event streaming/polling
+
+## Next Steps
+
+1. Add Stellar SDK dependency: `npm install @stellar/stellar-sdk`
+2. Configure network settings (Testnet/Mainnet)
+3. Implement transaction builders for each contract method
+4. Add proper error handling and retry logic
+5. Implement event polling or WebSocket connections
+6. Add transaction simulation before submission
+7. Implement proper caching and state management
