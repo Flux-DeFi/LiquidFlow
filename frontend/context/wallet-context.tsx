@@ -7,6 +7,7 @@ import {
   useEffect,
   useMemo,
   useReducer,
+  useRef,
 } from "react";
 import {
   SUPPORTED_WALLETS,
@@ -32,6 +33,7 @@ interface WalletContextValue {
 }
 
 const STORAGE_KEY = "flowfi.wallet.session.v1";
+const LAST_WALLET_KEY = "flowfi.wallet.last.v1";
 const WalletContext = createContext<WalletContextValue | undefined>(undefined);
 const VALID_WALLET_IDS: WalletId[] = ["freighter", "albedo", "xbull"];
 
@@ -174,10 +176,36 @@ function removeStoredSession(): void {
   window.localStorage.removeItem(STORAGE_KEY);
 }
 
+function storeLastWalletId(walletId: WalletId): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+  window.localStorage.setItem(LAST_WALLET_KEY, walletId);
+}
+
+function readLastWalletId(): WalletId | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+  const raw = window.localStorage.getItem(LAST_WALLET_KEY);
+  if (raw && VALID_WALLET_IDS.includes(raw as WalletId)) {
+    return raw as WalletId;
+  }
+  return null;
+}
+
+function removeLastWalletId(): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+  window.localStorage.removeItem(LAST_WALLET_KEY);
+}
+
 export function WalletProvider({ children }: { children: React.ReactNode }) {
   const [state, dispatch] = useReducer(walletReducer, INITIAL_STATE);
   const sorobanContext = useSorobanReact();
   const { address, connect: sorobanConnect, disconnect: sorobanDisconnect, activeChain, activeConnector } = sorobanContext;
+  const reconnectionAttempted = useRef(false);
 
   useEffect(() => {
     const existingSession = readStoredSession();
@@ -197,12 +225,20 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
       };
       dispatch({ type: "connect:success", session });
       storeSession(session);
-    } else if (state.isHydrated && state.status === "connected" && !address) {
-      // If we were connected but now address is gone, disconnect
-      dispatch({ type: "disconnect" });
-      removeStoredSession();
+      storeLastWalletId(session.walletId);
+    } else if (state.isHydrated && state.status === "connected" && !address && state.session) {
+      // We have a stored session from a previous page load, but the wallet
+      // extension isn't currently connected. Try silent reconnection once.
+      if (!reconnectionAttempted.current) {
+        reconnectionAttempted.current = true;
+        sorobanConnect().catch(() => {
+          removeStoredSession();
+          removeLastWalletId();
+          dispatch({ type: "disconnect" });
+        });
+      }
     }
-  }, [address, activeConnector, activeChain, state.isHydrated, state.status]);
+  }, [address, activeConnector, activeChain, state.isHydrated, state.status, state.session, sorobanConnect]);
 
   const clearError = useCallback(() => {
     dispatch({ type: "error:clear" });
@@ -224,6 +260,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
         message: toWalletErrorMessage(error),
       });
       removeStoredSession();
+      removeLastWalletId();
     }
   }, [sorobanConnect]);
 
@@ -231,6 +268,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     sorobanDisconnect();
     dispatch({ type: "disconnect" });
     removeStoredSession();
+    removeLastWalletId();
   }, [sorobanDisconnect]);
 
   const value = useMemo<WalletContextValue>(
