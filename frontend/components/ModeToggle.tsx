@@ -5,7 +5,7 @@ import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 
 export function ModeToggle() {
-  const { theme, setTheme } = useTheme();
+  const { theme, resolvedTheme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
   // Avoid hydration mismatch — only render after mount
@@ -18,7 +18,9 @@ export function ModeToggle() {
     );
   }
 
-  const isDark = theme === "dark";
+  // Use resolvedTheme so the "system" preference is reflected as its actual
+  // light/dark value on first visit.
+  const isDark = resolvedTheme === "dark";
 
   return (
     <button
