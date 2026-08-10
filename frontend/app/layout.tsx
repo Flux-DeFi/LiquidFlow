@@ -37,8 +37,8 @@ export default function RootLayout({
       <body className={`${sora.variable} ${mono.variable} antialiased`}>
         <ThemeProvider
           attribute="class"
-          defaultTheme="light"
-          enableSystem={false}
+          defaultTheme="system"
+          enableSystem
           disableTransitionOnChange
         >
         <SorobanProvider>
