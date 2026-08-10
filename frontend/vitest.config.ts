@@ -14,7 +14,7 @@ export default defineConfig({
   },
   test: {
     environment: "node",
-    include: ["**/*.test.ts"],
+    include: ["**/*.test.ts", "**/*.test.tsx"],
   },
   // Inline an empty PostCSS config so unit tests don't try to load the
   // project's Tailwind PostCSS pipeline.
