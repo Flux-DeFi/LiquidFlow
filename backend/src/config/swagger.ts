@@ -142,6 +142,116 @@ const options: swaggerJsdoc.Options = {
             },
           },
         },
+        CreateStreamRequest: {
+          type: 'object',
+          required: ['sender', 'recipient', 'amount', 'token'],
+          properties: {
+            sender: {
+              type: 'string',
+              description: 'Sender Stellar public key (G-prefixed, 56 characters)',
+              pattern: '^G[A-Z2-7]{55}$',
+              example: 'GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
+            },
+            recipient: {
+              type: 'string',
+              description: 'Recipient Stellar public key (G-prefixed, 56 characters)',
+              pattern: '^G[A-Z2-7]{55}$',
+              example: 'GBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB',
+            },
+            amount: {
+              type: 'number',
+              format: 'double',
+              exclusiveMinimum: 0,
+              description: 'Positive amount to deposit into the stream',
+              example: 250.5,
+            },
+            token: {
+              type: 'string',
+              minLength: 1,
+              description: 'Token identifier or contract address used for the stream',
+              example: 'USDC',
+            },
+            startTime: {
+              type: 'integer',
+              description: 'Optional stream start time as a Unix timestamp',
+              example: 1708531200,
+            },
+            endTime: {
+              type: 'integer',
+              description: 'Optional stream end time as a Unix timestamp; must be greater than startTime when both are provided',
+              example: 1708617600,
+            },
+          },
+          example: {
+            sender: 'GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
+            recipient: 'GBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB',
+            amount: 250.5,
+            token: 'USDC',
+            startTime: 1708531200,
+            endTime: 1708617600,
+          },
+        },
+        CreateStreamResponse: {
+          type: 'object',
+          required: ['id', 'status', 'sender', 'recipient', 'amount', 'token'],
+          properties: {
+            id: {
+              type: 'string',
+              description: 'Server-generated stream request identifier',
+              example: '123',
+            },
+            status: {
+              type: 'string',
+              description: 'Current stream creation status',
+              example: 'pending',
+            },
+            sender: {
+              type: 'string',
+              description: 'Sender Stellar public key (G-prefixed, 56 characters)',
+              pattern: '^G[A-Z2-7]{55}$',
+              example: 'GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
+            },
+            recipient: {
+              type: 'string',
+              description: 'Recipient Stellar public key (G-prefixed, 56 characters)',
+              pattern: '^G[A-Z2-7]{55}$',
+              example: 'GBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB',
+            },
+            amount: {
+              type: 'number',
+              format: 'double',
+              exclusiveMinimum: 0,
+              description: 'Positive amount deposited into the stream',
+              example: 250.5,
+            },
+            token: {
+              type: 'string',
+              minLength: 1,
+              description: 'Token identifier or contract address used for the stream',
+              example: 'USDC',
+            },
+            startTime: {
+              type: 'integer',
+              description: 'Optional stream start time as a Unix timestamp',
+              example: 1708531200,
+            },
+            endTime: {
+              type: 'integer',
+              description: 'Optional stream end time as a Unix timestamp',
+              example: 1708617600,
+            },
+          },
+          example: {
+            id: '123',
+            status: 'pending',
+            sender: 'GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
+            recipient: 'GBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB',
+            amount: 250.5,
+            token: 'USDC',
+            startTime: 1708531200,
+            endTime: 1708617600,
+          },
+        },
         StreamEvent: {
           type: 'object',
           required: ['id', 'streamId', 'eventType', 'transactionHash', 'ledgerSequence', 'timestamp'],
@@ -204,6 +314,71 @@ const options: swaggerJsdoc.Options = {
               type: 'string',
               description: 'Error code',
               example: 'NOT_FOUND',
+            },
+          },
+        },
+      },
+    },
+    paths: {
+      '/streams': {
+        post: {
+          tags: ['Streams'],
+          summary: 'Create a payment stream',
+          description: 'Validates a stream creation request and returns the indexed stream intent.',
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: {
+                  $ref: '#/components/schemas/CreateStreamRequest',
+                },
+                example: {
+                  sender: 'GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
+                  recipient: 'GBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB',
+                  amount: 250.5,
+                  token: 'USDC',
+                  startTime: 1708531200,
+                  endTime: 1708617600,
+                },
+              },
+            },
+          },
+          responses: {
+            '201': {
+              description: 'Stream creation request accepted',
+              content: {
+                'application/json': {
+                  schema: {
+                    $ref: '#/components/schemas/CreateStreamResponse',
+                  },
+                  example: {
+                    id: '123',
+                    status: 'pending',
+                    sender: 'GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
+                    recipient: 'GBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB',
+                    amount: 250.5,
+                    token: 'USDC',
+                    startTime: 1708531200,
+                    endTime: 1708617600,
+                  },
+                },
+              },
+            },
+            '400': {
+              description: 'Validation failed',
+              content: {
+                'application/json': {
+                  example: {
+                    message: 'Validation failed',
+                    errors: [
+                      {
+                        path: ['amount'],
+                        message: 'Amount must be positive',
+                      },
+                    ],
+                  },
+                },
+              },
             },
           },
         },
