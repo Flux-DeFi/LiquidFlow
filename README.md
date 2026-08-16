@@ -16,6 +16,8 @@ FlowFi consists of three main components:
 - **Backend**: Express.js API with TypeScript, Prisma ORM, and PostgreSQL
 - **Smart Contracts**: Soroban contracts written in Rust for on-chain logic
 
+> See [`contracts/README.md`](contracts/README.md) for prerequisites (Rust, soroban-cli) and build, test, and deploy instructions.
+
 ### Data Flow: Contract Event → Dashboard
 
 The diagram below shows how a stream event on-chain is intended to reach the dashboard. Each edge is labeled with its current status:
