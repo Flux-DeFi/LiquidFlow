@@ -90,6 +90,9 @@ impl StreamContract {
         amount: i128,
         duration: u64,
     ) -> u64 {
+        if duration == 0 {
+            panic!("duration must be positive");
+        }
         sender.require_auth();
 
         let stream_id = Self::get_next_stream_id(&env);
