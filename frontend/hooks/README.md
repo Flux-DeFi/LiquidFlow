@@ -197,6 +197,45 @@ export function StreamDashboard() {
 }
 ```
 
+
+## Error handling convention
+
+Every hook in this directory surfaces failures through a consistent `error`
+field so consumers do not need to know which underlying layer (Stellar SDK,
+wallet, network, or simulation) failed.
+
+- **`error: Error | string | null`** — present on all hooks. It is `null` while
+  the operation has not failed and stays `null` on success.
+- **Check `error` after `isLoading` becomes `false`** (or after an `await`
+  settles). Inspecting it while loading is still `true` can show a stale value
+  from a previous render or request.
+- **Render-friendly display**: when `error` is an `Error`, use `error.message`;
+  when it is a string, render it directly. The examples in
+  [`examples.tsx`](./examples.tsx) use both patterns:
+
+  ```typescript
+  // Conditional early-return pattern
+  if (error) return <div>Error: {error}</div>;
+
+  // Inline pattern inside a form
+  {error && <p style={{ color: "red" }}>{error}</p>}
+  ```
+
+- **Transaction hooks** (`useSorobanTransaction`, `useContractCall`,
+  `useStreamOperations`) also accept an optional `onError` callback. Use it when
+  you want to run side effects (logging, toasts, analytics) without tying error
+  rendering to a specific component.
+
+  ```typescript
+  await executeTransaction(buildTx, {
+    onError: (error) => console.error("Transaction failed:", error),
+  });
+  ```
+
+- **Do not swallow errors silently**. If a hook returns `error`, either render
+  it, forward it to an error boundary, or handle it in `onError`. Ignoring it
+  leaves users with a stuck UI and no actionable feedback.
+
 ## Implementation Status
 
 ⚠️ **Current Status**: These hooks provide the interface and state management layer. The actual Stellar SDK integration is marked with TODO comments and needs to be implemented:
