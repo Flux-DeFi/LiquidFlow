@@ -269,3 +269,49 @@ export function CompleteDashboardExample() {
     </div>
   );
 }
+
+// Example 9: Error handling with useStreamOperations and useContractQuery
+// Demonstrates the shared error-handling convention across hooks.
+export function ErrorHandlingExample() {
+  const { createStream, isLoading: isCreating, error: createError } =
+    useStreamOperations("CCONTRACT_ID");
+  const { data: stream, isLoading: isQuerying, error: queryError } =
+    useStreamData("CCONTRACT_ID", "stream-123");
+
+  const handleCreate = async () => {
+    await createStream(
+      {
+        recipient: "GRECIPIENT...",
+        tokenAddress: "CTOKEN...",
+        amount: 1000,
+        duration: 86400,
+      },
+      (streamId) => {
+        console.log("Created:", streamId);
+      }
+    );
+  };
+
+  return (
+    <div>
+      <h2>Error Handling Demo</h2>
+
+      {/* Query error surfaced after loading finishes */}
+      {isQuerying ? (
+        <div>Loading stream…</div>
+      ) : queryError ? (
+        <div style={{ color: "red" }}>Query failed: {queryError}</div>
+      ) : (
+        <div>Stream status: {stream?.isActive ? "Active" : "Inactive"}</div>
+      )}
+
+      {/* Mutation error rendered inline near the control */}
+      <button onClick={handleCreate} disabled={isCreating}>
+        {isCreating ? "Creating…" : "Create Stream"}
+      </button>
+      {createError && (
+        <p style={{ color: "red" }}>Transaction error: {createError}</p>
+      )}
+    </div>
+  );
+}
