@@ -1,3 +1,73 @@
+
+## Error Handling Conventions
+
+All hooks in this package share a consistent error-handling pattern. Consumers should rely on this convention rather than building ad-hoc error handling.
+
+### Common Error Shape
+
+Every hook exposes an `error` field with the following contract:
+
+```typescript
+error: string | null
+```
+
+- **`null`** — the operation has not failed (it may still be loading or idle).
+- **`string`** — a human-readable error message describing what went wrong.
+
+### How Errors Are Produced
+
+1. **Transaction hooks** (`useSorobanTransaction`, `useContractCall`, `useStreamOperations`)  
+   Errors are caught by a `try / catch` block around the full transaction lifecycle (build → sign → submit). The caught exception is normalised with:
+   ```typescript
+   const errorMessage = error instanceof Error ? error.message : "Transaction failed";
+   ```
+   This means you will receive the original `Error` message when available, or a safe fallback otherwise.
+
+2. **Query hooks** (`useContractQuery`, `useStreamData`, `useWalletBalance`)  
+   Errors are caught during the async fetch/simulate phase and normalised the same way. The `error` state is reset to `null` at the start of every new fetch, so stale errors do not persist across refetches.
+
+3. **Wallet-not-connected guard**  
+   When the user has not connected a wallet, transaction hooks short-circuit immediately with:
+   ```typescript
+   error: "Wallet not connected"
+   ```
+
+### Recommended Consumer Pattern
+
+Check `error` after `isLoading` becomes `false`:
+
+```typescript
+const { data, isLoading, error } = useContractQuery({ ... });
+
+if (isLoading) return <Spinner />;
+if (error)   return <Alert variant="error">{error}</Alert>;
+return <DataView data={data} />;
+```
+
+For mutating hooks, render the error inline near the triggering control so the user can retry:
+
+```typescript
+const { invoke, isLoading, error } = useContractCall();
+
+return (
+  <form onSubmit={handleSubmit}>
+    {/* form fields */}
+    <button type="submit" disabled={isLoading}>
+      {isLoading ? "Submitting…" : "Submit"}
+    </button>
+    {error && <p className="error-text">{error}</p>}
+  </form>
+);
+```
+
+### Do Not
+
+- Do **not** parse `error` strings to branch on error types. The message is intended for display only. If you need programmatic error discrimination, open an issue to discuss typed error wrappers.
+- Do **not** ignore the `error` field. Always surface it in the UI or log it for debugging.
+
+### Examples
+
+See `frontend/hooks/examples.tsx` for a complete component demonstrating error handling with `useStreamOperations` and `useContractQuery`.
 # Soroban Contract Interaction Hooks
 
 Custom React hooks for interacting with Soroban smart contracts on the Stellar network. These hooks abstract complex transaction building, signing, and contract invocations into reusable, type-safe interfaces.
