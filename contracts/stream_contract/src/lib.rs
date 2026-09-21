@@ -24,12 +24,25 @@ pub struct Stream {
     pub is_active: bool,
 }
 
+/// Errors returned by the LiquidFlow Stream Contract.
 #[contracterror]
 #[derive(Copy, Clone, Debug, Eq, PartialEq)]
 pub enum StreamError {
+    /// Returned when an operation specifies an invalid or non-positive amount (e.g. amount <= 0),
+    /// when stream creation duration results in a zero accrual rate per second (rate_per_second == 0),
+    /// or when a withdrawal request exceeds the recipient's currently vested and withdrawable balance.
     InvalidAmount = 1,
+
+    /// Returned when the requested stream ID cannot be found in persistent storage,
+    /// indicating an uninitialized stream ID or invalid query parameter.
     StreamNotFound = 2,
+
+    /// Returned when the caller fails authorization checks for the requested operation,
+    /// such as non-recipients attempting withdrawals or non-senders attempting stream top-ups or cancellations.
     Unauthorized = 3,
+
+    /// Returned when attempting to interact with a stream that has already been terminated,
+    /// fully settled, or marked inactive (`is_active == false`).
     StreamInactive = 4,
 }
 

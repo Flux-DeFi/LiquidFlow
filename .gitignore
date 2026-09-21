@@ -1,8 +1,8 @@
 node_modules
 dist
 target
-.env
 .DS_Store
 coverage
 *.log
 *.sh
+config.bat
