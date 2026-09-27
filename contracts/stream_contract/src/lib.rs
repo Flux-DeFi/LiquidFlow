@@ -158,9 +158,59 @@ impl StreamContract {
         next_id
     }
 
-    pub fn withdraw(env: Env, recipient: Address, stream_id: u64) {
-        // Placeholder for withdraw logic
-        let _ = (env, recipient, stream_id);
+    /// Withdraw available vested tokens from a stream and emit `tokens_withdrawn` event for indexers
+    pub fn withdraw(env: Env, recipient: Address, stream_id: u64) -> Result<i128, StreamError> {
+        recipient.require_auth();
+
+        let storage = env.storage().persistent();
+        let stream_key = (symbol_short!("STREAMS"), stream_id);
+
+        let mut stream: Stream = match storage.get(&stream_key) {
+            Some(s) => s,
+            None => return Err(StreamError::StreamNotFound),
+        };
+
+        if stream.recipient != recipient {
+            return Err(StreamError::Unauthorized);
+        }
+
+        if !stream.is_active {
+            return Err(StreamError::StreamInactive);
+        }
+
+        let now = env.ledger().timestamp();
+        let elapsed = now.saturating_sub(stream.start_time);
+        let total_vested = (elapsed as i128)
+            .saturating_mul(stream.rate_per_second)
+            .min(stream.deposited_amount);
+        let available = total_vested.saturating_sub(stream.withdrawn_amount);
+
+        if available > 0 {
+            let token_client = token::Client::new(&env, &stream.token_address);
+            let contract_address = env.current_contract_address();
+            token_client.transfer(&contract_address, &recipient, &available);
+
+            stream.withdrawn_amount += available;
+            stream.last_update_time = now;
+
+            storage.set(&stream_key, &stream);
+            env.storage()
+                .instance()
+                .set(&DataKey::Stream(stream_id), &stream);
+        }
+
+        // Emit TokensWithdrawnEvent for indexers
+        env.events().publish(
+            (Symbol::new(&env, "tokens_withdrawn"), stream_id),
+            TokensWithdrawnEvent {
+                stream_id,
+                recipient: recipient.clone(),
+                amount: available,
+                timestamp: now,
+            },
+        );
+
+        Ok(available)
     }
 
     pub fn cancel_stream(env: Env, sender: Address, stream_id: u64) {
