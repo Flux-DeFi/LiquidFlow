@@ -1,4 +1,4 @@
-import { rateLimit } from 'express-rate-limit';
+import { rateLimit, type Options } from 'express-rate-limit';
 
 /**
  * Number of reverse proxies in front of the Express app, used as the
@@ -13,7 +13,7 @@ import { rateLimit } from 'express-rate-limit';
  */
 export const TRUSTED_PROXY_HOPS = 2;
 
-export const globalRateLimiter = rateLimit({
+export const DEFAULT_RATE_LIMITER_OPTIONS: Partial<Options> = {
   windowMs: 1 * 60 * 1000, // 1 minute
   max: 100, // Limit each IP to 100 requests per `window` (here, per minute)
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
@@ -22,4 +22,16 @@ export const globalRateLimiter = rateLimit({
     message: 'Too many requests, please try again later.',
     status: 429,
   },
-});
+};
+
+/**
+ * Creates a rate limiter middleware with default or custom options.
+ */
+export const createRateLimiter = (options?: Partial<Options>) => {
+  return rateLimit({
+    ...DEFAULT_RATE_LIMITER_OPTIONS,
+    ...options,
+  });
+};
+
+export const globalRateLimiter = createRateLimiter();
