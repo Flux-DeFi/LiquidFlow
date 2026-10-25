@@ -2,9 +2,10 @@ import { describe, it, expect } from 'vitest';
 import request from 'supertest';
 import app from '../src/app.js';
 
-// A valid 56-char Stellar public key (G + 55 uppercase base32 chars A-Z2-7).
-const VALID_SENDER =    'GAAZI4TCR3TY5OJHCTJC2A4QSY6CJWJH5IAJTGKIN2ER7LBNVKOCCWN';
-const VALID_RECIPIENT = 'GCEZWKCA5VLDNRLN3RPRJMRZOX3Z6G5CHCGBZLBZAABIVVNMZFIHFQO';
+// G-prefixed, 56-character base32-shaped addresses accepted by the current
+// production Zod validator. That schema checks the shape, not a Stellar checksum.
+const VALID_SENDER = `G${'A'.repeat(55)}`;
+const VALID_RECIPIENT = `G${'B'.repeat(55)}`;
 
 describe('POST /streams', () => {
   // ── existing passing tests (updated to use real Stellar keys) ──────────────
