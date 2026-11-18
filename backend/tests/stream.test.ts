@@ -1,12 +1,17 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import request from 'supertest';
 import app from '../src/app.js';
+import { prisma } from '../src/lib/prisma.js';
+import { Prisma } from '../src/generated/prisma/index.js';
 
 // A valid 56-char Stellar public key (G + 55 uppercase base32 chars A-Z2-7).
-const VALID_SENDER =    'GAAZI4TCR3TY5OJHCTJC2A4QSY6CJWJH5IAJTGKIN2ER7LBNVKOCCWN';
-const VALID_RECIPIENT = 'GCEZWKCA5VLDNRLN3RPRJMRZOX3Z6G5CHCGBZLBZAABIVVNMZFIHFQO';
+const VALID_SENDER =    'GAAZI4TCR3TY5OJHCTJC2A4QSY6CJWJH5IAJTGKIN2ER7LBNVKOCCWNA';
+const VALID_RECIPIENT = 'GCEZWKCA5VLDNRLN3RPRJMRZOX3Z6G5CHCGBZLBZAABIVVNMZFIHFQOA';
 
 describe('POST /streams', () => {
+  // Mock Prisma create call to prevent external network calls during unit tests
+  vi.spyOn(prisma.stream as any, 'create').mockImplementation(() => Promise.resolve({}));
+
   // ── existing passing tests (updated to use real Stellar keys) ──────────────
 
   it('should return 201 and mock response when validation succeeds', async () => {
@@ -150,4 +155,33 @@ describe('POST /streams', () => {
 
     expect(response.status).toBe(201);
   });
+
+  it('should return 409 Conflict when a duplicate insert causes Prisma unique constraint violation (P2002)', async () => {
+    const p2002Error = new Prisma.PrismaClientKnownRequestError(
+      'Unique constraint failed on the fields: (`streamId`)',
+      {
+        code: 'P2002',
+        clientVersion: '7.4.1',
+        meta: { target: ['streamId'] },
+      },
+    );
+
+    const spy = vi.spyOn(prisma.stream, 'create').mockRejectedValueOnce(p2002Error);
+
+    const response = await request(app)
+      .post('/streams')
+      .send({
+        sender: VALID_SENDER,
+        recipient: VALID_RECIPIENT,
+        amount: 100,
+        token: 'USDC',
+      });
+
+    expect(response.status).toBe(409);
+    expect(response.body.message).toContain('Unique constraint violation');
+    expect(response.body.target).toEqual(['streamId']);
+
+    spy.mockRestore();
+  });
 });
+
