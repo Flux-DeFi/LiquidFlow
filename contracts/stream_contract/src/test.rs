@@ -1,7 +1,7 @@
 #![cfg(test)]
 
 use super::*;
-use soroban_sdk::{symbol_short, testutils::Address as _, token, Address, Env};
+use soroban_sdk::{symbol_short, testutils::{Address as _, Events as _, Ledger as _}, token, Address, Env};
 
 fn create_token_contract(env: &Env) -> (Address, Address) {
     let admin = Address::generate(env);
@@ -344,4 +344,71 @@ fn test_top_up_stream_inactive() {
     // Try to top up inactive stream
     let result = client.try_top_up_stream(&sender, &stream_id, &1_000i128);
     assert_eq!(result, Err(Ok(StreamError::StreamInactive)));
+}
+
+#[test]
+fn test_withdraw_emits_event() {
+    let env = Env::default();
+    env.mock_all_auths();
+
+    let (token_address, _admin) = create_token_contract(&env);
+    let sender = Address::generate(&env);
+    let recipient = Address::generate(&env);
+
+    let stellar_asset = soroban_sdk::token::StellarAssetClient::new(&env, &token_address);
+    stellar_asset.mint(&sender, &1_000_000_000);
+
+    let contract_id = env.register(StreamContract, ());
+    let client = StreamContractClient::new(&env, &contract_id);
+
+    let token_client = soroban_sdk::token::Client::new(&env, &token_address);
+    token_client.approve(&sender, &contract_id, &500_000_000, &1000000);
+
+    let amount: i128 = 500_000_000;
+    let duration: u64 = 500; // rate = 1,000,000 / sec
+
+    let stream_id = client.create_stream(&sender, &recipient, &token_address, &amount, &duration);
+
+    // Advance time by 50 seconds
+    env.ledger().with_mut(|l| {
+        l.timestamp += 50;
+    });
+
+    let withdrawn = client.withdraw(&recipient, &stream_id);
+    assert_eq!(withdrawn, 50 * 1_000_000);
+
+    // Verify events emitted during withdraw (transfer + tokens_withdrawn)
+    let events = env.events().all();
+    assert_eq!(events.len(), 2);
+    let event = events.get(1).unwrap();
+    assert_eq!(event.0, contract_id);
+
+    // Verify token balances
+    let recipient_balance = token_client.balance(&recipient);
+    assert_eq!(recipient_balance, 50 * 1_000_000);
+}
+
+#[test]
+fn test_withdraw_unauthorized() {
+    let env = Env::default();
+    env.mock_all_auths();
+
+    let (token_address, _admin) = create_token_contract(&env);
+    let sender = Address::generate(&env);
+    let recipient = Address::generate(&env);
+    let unauthorized_caller = Address::generate(&env);
+
+    let stellar_asset = soroban_sdk::token::StellarAssetClient::new(&env, &token_address);
+    stellar_asset.mint(&sender, &1_000_000_000);
+
+    let contract_id = env.register(StreamContract, ());
+    let client = StreamContractClient::new(&env, &contract_id);
+
+    let token_client = soroban_sdk::token::Client::new(&env, &token_address);
+    token_client.approve(&sender, &contract_id, &500_000_000, &1000000);
+
+    let stream_id = client.create_stream(&sender, &recipient, &token_address, &500_000_000, &500);
+
+    let result = client.try_withdraw(&unauthorized_caller, &stream_id);
+    assert_eq!(result, Err(Ok(StreamError::Unauthorized)));
 }
